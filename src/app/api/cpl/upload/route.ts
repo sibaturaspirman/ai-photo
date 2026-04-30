@@ -4,31 +4,33 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type UploadBody = {
-  imageDataUrl?: string;
+  file?: File;
   name?: string;
   phone?: string;
   formasi?: string;
 };
 
-async function dataUrlToBlob(dataUrl: string) {
-  const response = await fetch(dataUrl);
-  return response.blob();
-}
-
 export async function POST(req: Request) {
   let body: UploadBody;
   try {
-    body = (await req.json()) as UploadBody;
+    const form = await req.formData();
+    const file = form.get("file");
+    body = {
+      file: file instanceof File ? file : undefined,
+      name: String(form.get("name") ?? ""),
+      phone: String(form.get("phone") ?? ""),
+      formasi: String(form.get("formasi") ?? ""),
+    };
   } catch {
     return NextResponse.json(
-      { error: "Body request harus JSON yang valid." },
+      { error: "Body request harus multipart/form-data yang valid." },
       { status: 400 },
     );
   }
 
-  if (!body.imageDataUrl) {
+  if (!body.file) {
     return NextResponse.json(
-      { error: "Field imageDataUrl wajib diisi." },
+      { error: "Field file wajib diisi." },
       { status: 400 },
     );
   }
@@ -45,7 +47,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const blob = await dataUrlToBlob(body.imageDataUrl);
     const formData = new FormData();
     const formasiFix = body.formasi?.trim() || "Template 1";
     const userName = body.name?.trim() || "Guest";
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
 
     formData.append("name", `IQOS ${formasiFix}`);
     formData.append("phone", userPhone);
-    formData.append("file", blob, `${userName}-photo-ai-zirolu.png`);
+    formData.append("file", body.file, `${userName}-photo-ai-zirolu.jpg`);
 
     const response = await fetch("https://photo-ai-iims.zirolu.id/v1/iqos", {
       method: "POST",

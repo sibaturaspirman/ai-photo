@@ -103,10 +103,10 @@ export default function CplResultPage() {
     ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
   }
 
-  async function createCompositeDataUrl() {
+  async function createCompositeBlob() {
     const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = 1800;
+    canvas.width = 1080;
+    canvas.height = 1620;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
       throw new Error("Canvas context tidak tersedia.");
@@ -139,8 +139,15 @@ export default function CplResultPage() {
     }
 
     const template = await loadImage("/cpl/template-1.png");
-    ctx.drawImage(template, 0, 0, 1200, 1800);
-    return canvas.toDataURL("image/png");
+    ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((file) => resolve(file), "image/jpeg", 0.86);
+    });
+    if (!blob) {
+      throw new Error("Gagal mengekspor gambar hasil komposit.");
+    }
+    return blob;
   }
 
   const handleContinue = async () => {
@@ -148,18 +155,19 @@ export default function CplResultPage() {
     setUploadError(null);
     setIsUploading(true);
     try {
-      const imageDataUrl = await createCompositeDataUrl();
-      const payload = {
-        imageDataUrl,
-        name: window.localStorage.getItem("cpl-user-name") ?? "Guest",
-        phone: window.localStorage.getItem("cpl-user-phone") ?? "-",
-        formasi: window.localStorage.getItem("cpl-formasi") ?? "Template 1",
-      };
+      const imageBlob = await createCompositeBlob();
+      const payload = new FormData();
+      const name = window.localStorage.getItem("cpl-user-name") ?? "Guest";
+      const phone = window.localStorage.getItem("cpl-user-phone") ?? "-";
+      const formasi = window.localStorage.getItem("cpl-formasi") ?? "Template 1";
+      payload.append("name", name);
+      payload.append("phone", phone);
+      payload.append("formasi", formasi);
+      payload.append("file", imageBlob, `${name}-photo-ai-zirolu.jpg`);
 
       const response = await fetch("/api/cpl/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       const data = (await response.json()) as {
