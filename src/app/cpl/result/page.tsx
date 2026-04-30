@@ -10,6 +10,9 @@ type Captures = {
 };
 
 const EMPTY_CAPTURES: Captures = { 1: null, 2: null };
+const DEBUG_ALWAYS_SHOW_QR_POPUP = false;
+const DEBUG_DISABLE_QR_COUNTDOWN = false;
+const DEBUG_QR_VALUE = "https://example.com/debug-qr";
 const SLOT_LAYOUT = {
   1: { left: 3, top: 39.7, width: 45.6, height: 41.1 },
   2: { left: 69.5, top: 68.5, width: 28, height: 12.5 },
@@ -22,6 +25,7 @@ export default function CplResultPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [qrValue, setQrValue] = useState<string | null>(null);
   const [uploadId, setUploadId] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(10);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -57,12 +61,29 @@ export default function CplResultPage() {
     [selectedTemplate],
   );
 
+  const effectiveQrValue = DEBUG_ALWAYS_SHOW_QR_POPUP
+    ? qrValue ?? DEBUG_QR_VALUE
+    : qrValue;
+
   const qrImageUrl = useMemo(() => {
-    if (!qrValue) return null;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(
-      qrValue,
+    if (!effectiveQrValue) return null;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=720x720&data=${encodeURIComponent(
+      effectiveQrValue,
     )}`;
-  }, [qrValue]);
+  }, [effectiveQrValue]);
+
+  useEffect(() => {
+    if (!effectiveQrValue) return;
+    if (DEBUG_DISABLE_QR_COUNTDOWN) return;
+    if (secondsLeft <= 0) {
+      window.location.href = "/cpl";
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setSecondsLeft((prev) => prev - 1);
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [effectiveQrValue, secondsLeft]);
 
   async function loadImage(src: string) {
     return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -229,6 +250,7 @@ export default function CplResultPage() {
 
       setQrValue(data.file);
       setUploadId(data.id ? String(data.id) : null);
+      setSecondsLeft(10);
       window.localStorage.setItem("faceURLResult", data.file);
 
       window.setTimeout(() => {
@@ -327,7 +349,7 @@ export default function CplResultPage() {
             className="block w-full"
           >
             <Image
-              src="/cpl/btn-continue.png"
+              src="/cpl/btn-collect.png"
               alt="Continue"
               width={1024}
               height={216}
@@ -354,25 +376,66 @@ export default function CplResultPage() {
           <p className="mt-2 text-center text-sm text-red-600">{uploadError}</p>
         ) : null}
 
-        {qrImageUrl ? (
-          <div className="fixed bottom-4 right-4 z-50 flex flex-col items-center gap-2 rounded-xl bg-white/90 px-4 py-4 shadow-xl">
-            <img src={qrImageUrl} alt="QR Result" className="h-auto w-[180px]" />
-            {uploadId ? (
-              <p className="text-xs text-black">ID: {uploadId}</p>
-            ) : null}
-          </div>
-        ) : null}
       </div>
 
       {isUploading ? (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="flex w-[86%] max-w-[360px] flex-col items-center gap-3 rounded-2xl bg-white px-5 py-6 text-black">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-zinc-300 border-t-black" />
-            <p className="text-center text-sm font-medium">
+          <div className="flex w-[86%] flex-col items-center gap-3 rounded-2xl bg-white p-10 text-black">
+            <div className="h-[100px] w-[100px] animate-spin rounded-full border-4 border-zinc-300 border-t-black" />
+            <p className="text-center text-[5vw] font-medium">
               Uploading ke server...
               <br />
               Mohon tunggu sebentar.
             </p>
+          </div>
+        </div>
+      ) : null}
+
+      {qrImageUrl ? (
+        <div className="absolute inset-0 z-[60] flex min-h-dvh w-full items-center justify-center">
+          <div className="absolute top-[5rem] left-0 right-0 mx-auto w-[135px]">
+            <Image
+              src="/cpl/cpl-logo.png"
+              alt=""
+              width={280}
+              height={280}
+              priority
+              className="h-auto w-full"
+              sizes="86px"
+            />
+          </div>
+          <div className="relative flex min-h-dvh w-full flex-col items-center overflow-hidden">
+            <div
+              className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: "url(/cpl/bg.jpg)" }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: "url(/cpl/frame.png)" }}
+            />
+
+            <Image
+              src="/cpl/scan.png"
+              alt=""
+              width={1542}
+              height={494}
+              className="mt-[20rem] mb-10 h-auto w-[70%]"
+              sizes="(max-width: 640px) 76vw, 360px"
+            />
+
+            <div className="mt-6 rounded-xl bg-white p-4 shadow-xl">
+              <img src={qrImageUrl} alt="QR Result" className="h-[720px] w-[720px]" />
+            </div>
+
+            {uploadId ? <p className="mt-2 text-2xl text-black">ID: {uploadId}</p> : null}
+
+            {!DEBUG_DISABLE_QR_COUNTDOWN ? (
+              <p className="mt-auto pb-[9rem] text-[5vw] text-black">
+                Back to home in {secondsLeft}s
+              </p>
+            ) : (
+              <div className="mt-auto pb-10" />
+            )}
           </div>
         </div>
       ) : null}
