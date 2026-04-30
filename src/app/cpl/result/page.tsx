@@ -105,8 +105,8 @@ export default function CplResultPage() {
 
   async function createCompositeBlob() {
     const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1620;
+    canvas.width = 1200;
+    canvas.height = 1800;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
       throw new Error("Canvas context tidak tersedia.");
@@ -150,34 +150,77 @@ export default function CplResultPage() {
     return blob;
   }
 
+  async function uploadDirectToZirolu(
+    file: Blob,
+    payload: { name: string; phone: string; formasi: string },
+  ) {
+    const auth = process.env.NEXT_PUBLIC_ZIROLU_AUTH;
+    if (!auth) {
+      throw new Error("NEXT_PUBLIC_ZIROLU_AUTH tidak tersedia untuk direct upload.");
+    }
+
+    const bodyFormData = new FormData();
+    bodyFormData.append("name", `IQOS ${payload.formasi}`);
+    bodyFormData.append("phone", payload.phone);
+    bodyFormData.append("file", file, `${payload.name}-photo-ai-zirolu.jpg`);
+
+    const response = await fetch("https://photo-ai-iims.zirolu.id/v1/iqos", {
+      method: "POST",
+      body: bodyFormData,
+      headers: {
+        Authorization: auth,
+        Accept: "application/json",
+      },
+    });
+
+    const data = (await response.json()) as {
+      file?: string;
+      id?: string | number;
+      message?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(data.message ?? "Direct upload ke Zirolu gagal.");
+    }
+    return { file: data.file ?? null, id: data.id ?? null };
+  }
+
   const handleContinue = async () => {
     if (!captures[1] || !captures[2] || isUploading) return;
     setUploadError(null);
     setIsUploading(true);
     try {
       const imageBlob = await createCompositeBlob();
-      const payload = new FormData();
       const name = window.localStorage.getItem("cpl-user-name") ?? "Guest";
       const phone = window.localStorage.getItem("cpl-user-phone") ?? "-";
       const formasi = window.localStorage.getItem("cpl-formasi") ?? "Template 1";
-      payload.append("name", name);
-      payload.append("phone", phone);
-      payload.append("formasi", formasi);
-      payload.append("file", imageBlob, `${name}-photo-ai-zirolu.jpg`);
+      let data:
+        | { file?: string | null; id?: string | number | null; error?: string }
+        | { file: string | null; id: string | number | null };
 
-      const response = await fetch("/api/cpl/upload", {
-        method: "POST",
-        body: payload,
-      });
+      if (process.env.NEXT_PUBLIC_ZIROLU_AUTH) {
+        data = await uploadDirectToZirolu(imageBlob, { name, phone, formasi });
+      } else {
+        const payload = new FormData();
+        payload.append("name", name);
+        payload.append("phone", phone);
+        payload.append("formasi", formasi);
+        payload.append("file", imageBlob, `${name}-photo-ai-zirolu.jpg`);
 
-      const data = (await response.json()) as {
-        file?: string | null;
-        id?: string | number | null;
-        error?: string;
-      };
+        const response = await fetch("/api/cpl/upload", {
+          method: "POST",
+          body: payload,
+        });
 
-      if (!response.ok) {
-        throw new Error(data.error ?? "Upload gagal.");
+        data = (await response.json()) as {
+          file?: string | null;
+          id?: string | number | null;
+          error?: string;
+        };
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Upload gagal.");
+        }
       }
 
       if (!data.file) {
