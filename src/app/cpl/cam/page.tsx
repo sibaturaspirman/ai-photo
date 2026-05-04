@@ -4,15 +4,66 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type TakeSlot = 1 | 2;
+type TakeSlot = 1 | 2 | 3;
 
-const templateOneTakeConfig: Record<TakeSlot, { w: number; h: number }> = {
+const templateOneTakeConfig: Record<1 | 2, { w: number; h: number }> = {
   1: { w: 463, h: 732 },
   2: { w: 304, h: 228 },
 };
 
-function captureFromVideo(video: HTMLVideoElement, take: TakeSlot) {
-  const ratio = templateOneTakeConfig[take].w / templateOneTakeConfig[take].h;
+const templateTwoTakeConfig: Record<1 | 2 | 3, { w: number; h: number }> = {
+  1: { w: 1120, h: 497 },
+  2: { w: 353, h: 353 },
+  3: { w: 713, h: 249 },
+};
+
+const templateTwoExportSize: Record<1 | 2 | 3, [number, number]> = {
+  1: [2240, 994],
+  2: [706, 706],
+  3: [1426, 498],
+};
+
+const templateThreeTakeConfig: Record<1 | 2, { w: number; h: number }> = {
+  1: { w: 1200, h: 1800 },
+  2: { w: 327, h: 327 },
+};
+
+const templateThreeExportSize: Record<1 | 2, [number, number]> = {
+  1: [1200, 1800],
+  2: [654, 654],
+};
+
+const templateFourTakeConfig: Record<1 | 2, { w: number; h: number }> = {
+  1: { w: 1200, h: 1800 },
+  2: { w: 441, h: 273 },
+};
+
+const templateFourExportSize: Record<1 | 2, [number, number]> = {
+  1: [1200, 1800],
+  2: [882, 546],
+};
+
+function camStorageBase(template: number) {
+  if (template === 2) return "cpl-cam-template-2";
+  if (template === 3) return "cpl-cam-template-3";
+  if (template === 4) return "cpl-cam-template-4";
+  return "cpl-cam-template-1";
+}
+
+function captureFromVideo(
+  video: HTMLVideoElement,
+  take: TakeSlot,
+  template: number,
+) {
+  const cfg =
+    template === 2
+      ? templateTwoTakeConfig[take]
+      : template === 3
+        ? templateThreeTakeConfig[take as 1 | 2]
+        : template === 4
+          ? templateFourTakeConfig[take as 1 | 2]
+          : templateOneTakeConfig[take as 1 | 2];
+  const ratio = cfg.w / cfg.h;
   const videoW = video.videoWidth;
   const videoH = video.videoHeight;
   const videoRatio = videoW / videoH;
@@ -31,8 +82,18 @@ function captureFromVideo(video: HTMLVideoElement, take: TakeSlot) {
   }
 
   const canvas = document.createElement("canvas");
-  const outW = take === 1 ? 926 : 912;
-  const outH = take === 1 ? 1464 : 684;
+  let outW: number;
+  let outH: number;
+  if (template === 2) {
+    [outW, outH] = templateTwoExportSize[take];
+  } else if (template === 3) {
+    [outW, outH] = templateThreeExportSize[take as 1 | 2];
+  } else if (template === 4) {
+    [outW, outH] = templateFourExportSize[take as 1 | 2];
+  } else {
+    outW = take === 1 ? 926 : 912;
+    outH = take === 1 ? 1464 : 684;
+  }
   canvas.width = outW;
   canvas.height = outH;
 
@@ -51,6 +112,7 @@ export default function CplCamPage() {
   const [captures, setCaptures] = useState<Record<TakeSlot, string | null>>({
     1: null,
     2: null,
+    3: null,
   });
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -73,6 +135,39 @@ export default function CplCamPage() {
       setSelectedTemplate(storageTemplate);
     }
   }, []);
+
+  useEffect(() => {
+    const base = camStorageBase(selectedTemplate);
+    try {
+      const rawAi = window.localStorage.getItem(`${base}-ai`);
+      const raw = rawAi ?? window.localStorage.getItem(base);
+      if (!raw) {
+        setCaptures({ 1: null, 2: null, 3: null });
+        setActiveTake(1);
+        return;
+      }
+      const parsed = JSON.parse(raw) as Partial<Record<TakeSlot, string>>;
+      const next = {
+        1: typeof parsed[1] === "string" ? parsed[1] : null,
+        2: typeof parsed[2] === "string" ? parsed[2] : null,
+        3: typeof parsed[3] === "string" ? parsed[3] : null,
+      };
+      setCaptures(next);
+      if (selectedTemplate === 2) {
+        if (!next[1]) setActiveTake(1);
+        else if (!next[2]) setActiveTake(2);
+        else if (!next[3]) setActiveTake(3);
+        else setActiveTake(3);
+      } else {
+        if (!next[1]) setActiveTake(1);
+        else if (!next[2]) setActiveTake(2);
+        else setActiveTake(2);
+      }
+    } catch {
+      setCaptures({ 1: null, 2: null, 3: null });
+      setActiveTake(1);
+    }
+  }, [selectedTemplate]);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -149,21 +244,36 @@ export default function CplCamPage() {
   }, [isGeneratingAi]);
 
   const takeRatio = useMemo(() => {
-    const cfg = templateOneTakeConfig[activeTake];
+    const cfg =
+      selectedTemplate === 2
+        ? templateTwoTakeConfig[activeTake]
+        : selectedTemplate === 3
+          ? templateThreeTakeConfig[activeTake as 1 | 2]
+          : selectedTemplate === 4
+            ? templateFourTakeConfig[activeTake as 1 | 2]
+            : templateOneTakeConfig[activeTake as 1 | 2];
     return `${cfg.w} / ${cfg.h}`;
-  }, [activeTake]);
-  const isCaptureComplete = Boolean(captures[1] && captures[2]);
+  }, [activeTake, selectedTemplate]);
+  const isCaptureComplete =
+    selectedTemplate === 2
+      ? Boolean(captures[1] && captures[2] && captures[3])
+      : Boolean(captures[1] && captures[2]);
 
   const commitCapture = () => {
     if (!videoRef.current) return;
-    const shot = captureFromVideo(videoRef.current, activeTake);
+    const shot = captureFromVideo(videoRef.current, activeTake, selectedTemplate);
     if (!shot) return;
 
     const next = { ...captures, [activeTake]: shot };
     setCaptures(next);
-    window.localStorage.setItem("cpl-cam-template-1", JSON.stringify(next));
+    const payload =
+      selectedTemplate === 2 ? { 1: next[1], 2: next[2], 3: next[3] } : { 1: next[1], 2: next[2] };
+    window.localStorage.setItem(camStorageBase(selectedTemplate), JSON.stringify(payload));
 
-    if (activeTake === 1) {
+    if (selectedTemplate === 2) {
+      if (activeTake === 1) setActiveTake(2);
+      else if (activeTake === 2) setActiveTake(3);
+    } else if (activeTake === 1) {
       setActiveTake(2);
     }
   };
@@ -186,12 +296,13 @@ export default function CplCamPage() {
   };
 
   const handleRetake = () => {
-    const reset = { 1: null, 2: null };
+    const reset = { 1: null, 2: null, 3: null };
     setCaptures(reset);
     setActiveTake(1);
     setGenerateError(null);
-    window.localStorage.removeItem("cpl-cam-template-1");
-    window.localStorage.removeItem("cpl-cam-template-1-ai");
+    const base = camStorageBase(selectedTemplate);
+    window.localStorage.removeItem(base);
+    window.localStorage.removeItem(`${base}-ai`);
     if (!streamRef.current) {
       startCamera();
     }
@@ -200,42 +311,98 @@ export default function CplCamPage() {
   const nextHref = selectedTemplate > 0 ? `/cpl/result?template=${selectedTemplate}` : "/cpl/result";
 
   const handleGenerateAndContinue = async () => {
-    if (!captures[1] || !captures[2] || isGeneratingAi) return;
+    if (isGeneratingAi) return;
+    if (selectedTemplate === 2) {
+      if (!captures[1] || !captures[2] || !captures[3]) return;
+    } else if (!captures[1] || !captures[2]) {
+      return;
+    }
     setGenerateError(null);
     stopCamera();
     setIsGeneratingAi(true);
     try {
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 150000);
-      const response = await fetch("/api/cpl/template-1", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          take1: captures[1],
-          take2: captures[2],
-        }),
-        signal: controller.signal,
-      });
+      const base = camStorageBase(selectedTemplate);
+      const response =
+        selectedTemplate === 2
+          ? await fetch("/api/cpl/template-2", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                take1: captures[1],
+                take2: captures[2],
+                take3: captures[3],
+              }),
+              signal: controller.signal,
+            })
+          : selectedTemplate === 3
+            ? await fetch("/api/cpl/template-3", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  take1: captures[1],
+                  take2: captures[2],
+                }),
+                signal: controller.signal,
+              })
+            : selectedTemplate === 4
+              ? await fetch("/api/cpl/template-4", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    take1: captures[1],
+                    take2: captures[2],
+                  }),
+                  signal: controller.signal,
+                })
+              : await fetch("/api/cpl/template-1", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    take1: captures[1],
+                    take2: captures[2],
+                  }),
+                  signal: controller.signal,
+                });
       window.clearTimeout(timeoutId);
 
       const data = (await response.json()) as {
         error?: string;
-        captures?: { 1?: string; 2?: string };
+        captures?: { 1?: string; 2?: string; 3?: string };
       };
 
       if (!response.ok) {
         throw new Error(data.error ?? "Gagal generate AI photo.");
       }
 
-      const aiCaptures = {
-        1: data.captures?.[1] ?? null,
-        2: data.captures?.[2] ?? null,
-      };
+      const aiCaptures =
+        selectedTemplate === 2
+          ? {
+              1: data.captures?.[1] ?? null,
+              2: data.captures?.[2] ?? null,
+              3: data.captures?.[3] ?? null,
+            }
+          : {
+              1: data.captures?.[1] ?? null,
+              2: data.captures?.[2] ?? null,
+              3: null,
+            };
       if (!aiCaptures[1] || !aiCaptures[2]) {
         throw new Error("Hasil AI tidak lengkap. Silakan coba lagi.");
       }
+      if (selectedTemplate === 2 && !aiCaptures[3]) {
+        throw new Error("Hasil AI tidak lengkap. Silakan coba lagi.");
+      }
 
-      window.localStorage.setItem("cpl-cam-template-1-ai", JSON.stringify(aiCaptures));
+      window.localStorage.setItem(
+        `${base}-ai`,
+        JSON.stringify(
+          selectedTemplate === 2
+            ? { 1: aiCaptures[1], 2: aiCaptures[2], 3: aiCaptures[3] }
+            : { 1: aiCaptures[1], 2: aiCaptures[2] },
+        ),
+      );
       setProcessingPercent(100);
       router.push(nextHref);
     } catch (error) {
@@ -335,18 +502,39 @@ export default function CplCamPage() {
           </button>
         ) : null}
 
-        <div className="flex items-center gap-3">
-          {[1, 2].map((slot) => {
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          {(selectedTemplate === 2 ? [1, 2, 3] : [1, 2]).map((slot) => {
             const hasShot = Boolean(captures[slot as TakeSlot]);
-            const ratio = templateOneTakeConfig[slot as TakeSlot];
+            const ratio =
+              selectedTemplate === 2
+                ? templateTwoTakeConfig[slot as TakeSlot]
+                : selectedTemplate === 3
+                  ? templateThreeTakeConfig[slot as 1 | 2]
+                  : selectedTemplate === 4
+                    ? templateFourTakeConfig[slot as 1 | 2]
+                    : templateOneTakeConfig[slot as 1 | 2];
+            const thumbH =
+              selectedTemplate === 2
+                ? "100px"
+                : selectedTemplate === 3 && slot === 1
+                  ? "120px"
+                  : selectedTemplate === 3
+                    ? "90px"
+                    : selectedTemplate === 4 && slot === 1
+                      ? "120px"
+                      : selectedTemplate === 4
+                        ? "72px"
+                        : slot === 1
+                          ? "174px"
+                          : "130px";
             return (
               <div
                 key={slot}
-                className={`relative overflow-hidden rounded-md border-2 flex items-center justify-center ${
+                className={`relative flex items-center justify-center overflow-hidden rounded-md border-2 ${
                   activeTake === slot ? "border-black bg-white text-black" : "border-black/60 bg-transparent text-black/60"
                 }`}
                 style={{
-                  height: slot === 1 ? "174px" : "130px",
+                  height: thumbH,
                   aspectRatio: `${ratio.w} / ${ratio.h}`,
                 }}
               >
