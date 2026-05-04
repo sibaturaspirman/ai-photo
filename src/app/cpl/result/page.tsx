@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Captures = {
   1: string | null;
@@ -90,6 +91,7 @@ function camStorageBase(template: number) {
 export default function CplResultPage() {
   const router = useRouter();
   const printImgRef = useRef<HTMLImageElement | null>(null);
+  const [printPortalReady, setPrintPortalReady] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(1);
   const [captures, setCaptures] = useState<Captures>(EMPTY_CAPTURES);
   const [isUploading, setIsUploading] = useState(false);
@@ -128,6 +130,10 @@ export default function CplResultPage() {
     } catch {
       setCaptures(EMPTY_CAPTURES);
     }
+  }, []);
+
+  useEffect(() => {
+    setPrintPortalReady(true);
   }, []);
 
   const camHref = useMemo(
@@ -449,15 +455,20 @@ export default function CplResultPage() {
 
   return (
     <main className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden px-4 py-6">
-      <img
-        ref={printImgRef}
-        id="print-hires-only"
-        alt=""
-        width={1200}
-        height={1800}
-        className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
-        aria-hidden
-      />
+      {printPortalReady
+        ? createPortal(
+            <img
+              ref={printImgRef}
+              id="print-hires-only"
+              alt=""
+              width={1200}
+              height={1800}
+              className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
+              aria-hidden
+            />,
+            document.body,
+          )
+        : null}
       <div
         className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url(/cpl/bg.jpg)" }}
@@ -722,11 +733,22 @@ export default function CplResultPage() {
 
       <style jsx global>{`
         @media print {
-          body * {
-            visibility: hidden !important;
+          @page {
+            margin: 0;
+            size: auto;
           }
-
+          html,
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+          }
+          body > *:not(#print-hires-only) {
+            display: none !important;
+          }
           #print-hires-only {
+            display: block !important;
             visibility: visible !important;
             position: fixed !important;
             inset: 0 !important;
@@ -740,6 +762,8 @@ export default function CplResultPage() {
             object-position: center !important;
             opacity: 1 !important;
             z-index: 99999 !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
