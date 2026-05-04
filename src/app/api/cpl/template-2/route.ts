@@ -56,7 +56,7 @@ async function editBackground(
     fal.subscribe("fal-ai/nano-banana-pro/edit", {
       input: {
         prompt:
-          "Replace the background with the second reference image only. Keep the entire foreground from the first image: every person must stay fully visible—solo, pairs, or groups of three or more—same poses, outfits, faces, and spacing between people; do not remove, crop out, merge, or duplicate anyone. Realistic photo style. Make photo 4K hires resolution.",
+          "Replace the background with the second reference image only. Keep the entire main foreground from the first image: every intended subject must stay fully visible—solo, pairs, or groups of three or more—same poses, outfits, faces, and spacing between them; do not remove, crop out, merge, or duplicate those subjects. Remove any other people, faces, or partial figures visible behind them or deep in the original scene (bystanders, crowd, staff in the back); they must not appear in the output—only the new background from the second reference, with no extra humans painted in. Realistic photo style. Make photo 4K hires resolution.",
         image_urls: [sourceImageUrl, backgroundImageUrl],
         num_images: 1,
         aspect_ratio: aspectRatio,
