@@ -304,7 +304,7 @@ export default function CplResultPage() {
       tpl === 4
         ? "/cpl/template-4-fix3.png"
         : tpl === 3
-          ? "/cpl/template-3-fix5.png"
+          ? "/cpl/template-3-fix6.png"
           : tpl === 2
             ? "/cpl/template-2.png"
             : "/cpl/template-1.png";
@@ -593,7 +593,7 @@ export default function CplResultPage() {
               selectedTemplate === 4
                 ? "/cpl/template-4-fix3.png"
                 : selectedTemplate === 3
-                  ? "/cpl/template-3-fix5.png"
+                  ? "/cpl/template-3-fix6.png"
                   : selectedTemplate === 2
                     ? "/cpl/template-2.png"
                     : "/cpl/template-1.png"
