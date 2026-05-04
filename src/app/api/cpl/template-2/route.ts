@@ -56,7 +56,7 @@ async function editBackground(
     fal.subscribe("fal-ai/nano-banana-pro/edit", {
       input: {
         prompt:
-          "Replace the background with the second reference image only. Keep the main person exactly as in the first image, realistic photo style, preserve pose and outfit. Seamlessly blend the subject into the new background with realistic edge.",
+          "Replace the background with the second reference image only. Keep the main person exactly as in the first image, realistic photo style, preserve pose and outfit. Make photo 4K hires resolution.",
         image_urls: [sourceImageUrl, backgroundImageUrl],
         num_images: 1,
         aspect_ratio: aspectRatio,
