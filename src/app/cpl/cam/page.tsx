@@ -125,49 +125,24 @@ export default function CplCamPage() {
     const params = new URLSearchParams(window.location.search);
     const queryTemplate = Number(params.get("template"));
     const storageTemplate = Number(window.localStorage.getItem("cpl-template"));
+    let resolved = 1;
     if (Number.isInteger(queryTemplate) && queryTemplate >= 1 && queryTemplate <= 4) {
-      setSelectedTemplate(queryTemplate);
+      resolved = queryTemplate;
     } else if (
       Number.isInteger(storageTemplate) &&
       storageTemplate >= 1 &&
       storageTemplate <= 4
     ) {
-      setSelectedTemplate(storageTemplate);
+      resolved = storageTemplate;
     }
-  }, []);
+    setSelectedTemplate(resolved);
 
-  useEffect(() => {
-    const base = camStorageBase(selectedTemplate);
-    try {
-      const rawAi = window.localStorage.getItem(`${base}-ai`);
-      const raw = rawAi ?? window.localStorage.getItem(base);
-      if (!raw) {
-        setCaptures({ 1: null, 2: null, 3: null });
-        setActiveTake(1);
-        return;
-      }
-      const parsed = JSON.parse(raw) as Partial<Record<TakeSlot, string>>;
-      const next = {
-        1: typeof parsed[1] === "string" ? parsed[1] : null,
-        2: typeof parsed[2] === "string" ? parsed[2] : null,
-        3: typeof parsed[3] === "string" ? parsed[3] : null,
-      };
-      setCaptures(next);
-      if (selectedTemplate === 2) {
-        if (!next[1]) setActiveTake(1);
-        else if (!next[2]) setActiveTake(2);
-        else if (!next[3]) setActiveTake(3);
-        else setActiveTake(3);
-      } else {
-        if (!next[1]) setActiveTake(1);
-        else if (!next[2]) setActiveTake(2);
-        else setActiveTake(2);
-      }
-    } catch {
-      setCaptures({ 1: null, 2: null, 3: null });
-      setActiveTake(1);
-    }
-  }, [selectedTemplate]);
+    const base = camStorageBase(resolved);
+    window.localStorage.removeItem(base);
+    window.localStorage.removeItem(`${base}-ai`);
+    setCaptures({ 1: null, 2: null, 3: null });
+    setActiveTake(1);
+  }, []);
 
   const stopCamera = () => {
     if (streamRef.current) {
