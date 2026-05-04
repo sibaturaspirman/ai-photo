@@ -127,7 +127,7 @@ export default function CplResultPage() {
   }, []);
 
   const camHref = useMemo(
-    () => `/cpl/cam?template=${selectedTemplate}`,
+    () => `/cpl/cam2?template=${selectedTemplate}`,
     [selectedTemplate],
   );
 
