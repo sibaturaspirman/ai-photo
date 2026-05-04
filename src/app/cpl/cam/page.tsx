@@ -295,6 +295,7 @@ export default function CplCamPage() {
     setGenerateError(null);
     stopCamera();
     setIsGeneratingAi(true);
+    let navigatedToResult = false;
     try {
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 150000);
@@ -379,6 +380,7 @@ export default function CplCamPage() {
         ),
       );
       setProcessingPercent(100);
+      navigatedToResult = true;
       router.push(nextHref);
     } catch (error) {
       const message =
@@ -392,7 +394,9 @@ export default function CplCamPage() {
       );
       await startCamera();
     } finally {
-      setIsGeneratingAi(false);
+      if (!navigatedToResult) {
+        setIsGeneratingAi(false);
+      }
     }
   };
 
