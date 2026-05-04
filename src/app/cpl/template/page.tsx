@@ -178,7 +178,7 @@ export default function CplTemplatePage() {
           </Swiper>
         </div>
 
-        <Link href="/cpl/cam" aria-label="Continue" className="mt-[4rem] block w-[94%]">
+        <Link href="/cpl/cam2" aria-label="Continue" className="mt-[4rem] block w-[94%]">
           <Image
             src="/cpl/btn-continue.png"
             alt=""
