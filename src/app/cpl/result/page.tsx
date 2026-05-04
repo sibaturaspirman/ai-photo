@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type Captures = {
@@ -12,7 +13,6 @@ type Captures = {
 
 const EMPTY_CAPTURES: Captures = { 1: null, 2: null, 3: null };
 const DEBUG_ALWAYS_SHOW_QR_POPUP = false;
-const DEBUG_DISABLE_QR_COUNTDOWN = false;
 const DEBUG_QR_VALUE = "https://example.com/debug-qr";
 const CANVAS_W = 1200;
 const CANVAS_H = 1800;
@@ -85,13 +85,13 @@ function camStorageBase(template: number) {
 }
 
 export default function CplResultPage() {
+  const router = useRouter();
   const [selectedTemplate, setSelectedTemplate] = useState(1);
   const [captures, setCaptures] = useState<Captures>(EMPTY_CAPTURES);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [qrValue, setQrValue] = useState<string | null>(null);
   const [uploadId, setUploadId] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(10);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -141,19 +141,6 @@ export default function CplResultPage() {
       effectiveQrValue,
     )}`;
   }, [effectiveQrValue]);
-
-  useEffect(() => {
-    if (!effectiveQrValue) return;
-    if (DEBUG_DISABLE_QR_COUNTDOWN) return;
-    if (secondsLeft <= 0) {
-      window.location.href = "/cpl";
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setSecondsLeft((prev) => prev - 1);
-    }, 1000);
-    return () => window.clearTimeout(timer);
-  }, [effectiveQrValue, secondsLeft]);
 
   async function loadImage(src: string) {
     return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -400,7 +387,6 @@ export default function CplResultPage() {
 
       setQrValue(data.file);
       setUploadId(data.id ? String(data.id) : null);
-      setSecondsLeft(10);
       window.localStorage.setItem("faceURLResult", data.file);
 
       window.setTimeout(() => {
@@ -619,7 +605,21 @@ export default function CplResultPage() {
       ) : null}
 
       {qrImageUrl ? (
-        <div className="absolute inset-0 z-[60] flex min-h-dvh w-full items-center justify-center">
+        <div
+          className="absolute inset-0 z-[60] flex min-h-dvh w-full cursor-pointer items-center justify-center"
+          role="button"
+          tabIndex={0}
+          aria-label="Kembali ke home"
+          onClick={() => {
+            router.push("/cpl");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              router.push("/cpl");
+            }
+          }}
+        >
           <div className="absolute top-[5rem] left-0 right-0 mx-auto w-[135px]">
             <Image
               src="/cpl/cpl-logo.png"
@@ -646,7 +646,7 @@ export default function CplResultPage() {
               alt=""
               width={1542}
               height={494}
-              className="mt-[20rem] mb-10 h-auto w-[70%]"
+              className="mt-[13rem] mb-10 h-auto w-[70%]"
               sizes="(max-width: 640px) 76vw, 360px"
             />
 
@@ -656,13 +656,9 @@ export default function CplResultPage() {
 
             {uploadId ? <p className="mt-2 text-2xl text-black">ID: {uploadId}</p> : null}
 
-            {!DEBUG_DISABLE_QR_COUNTDOWN ? (
-              <p className="mt-auto pb-[9rem] text-[5vw] text-black">
-                Back to home in {secondsLeft}s
-              </p>
-            ) : (
-              <div className="mt-auto pb-10" />
-            )}
+            <p className="mt-auto pb-[15rem] text-center text-[4vw] text-black/70">
+              Ketuk layar untuk kembali ke home
+            </p>
           </div>
         </div>
       ) : null}
