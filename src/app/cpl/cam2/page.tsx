@@ -46,6 +46,16 @@ const templateFourExportSize: Record<1 | 2, [number, number]> = {
   2: [882, 546],
 };
 
+let mirrorScratchCanvas: HTMLCanvasElement | null = null;
+function getMirrorScratchCanvas(w: number, h: number) {
+  if (!mirrorScratchCanvas || mirrorScratchCanvas.width !== w || mirrorScratchCanvas.height !== h) {
+    mirrorScratchCanvas = document.createElement("canvas");
+    mirrorScratchCanvas.width = w;
+    mirrorScratchCanvas.height = h;
+  }
+  return mirrorScratchCanvas;
+}
+
 function camStorageBase(template: number) {
   if (template === 2) return "cpl-cam-template-2";
   if (template === 3) return "cpl-cam-template-3";
@@ -63,13 +73,17 @@ function drawLandscapeVideoAsPortrait(
   const vh = video.videoHeight;
   if (!vw || !vh) return;
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, cw, ch);
+  const scratch = getMirrorScratchCanvas(cw, ch);
+  const sctx = scratch.getContext("2d");
+  if (!sctx) return;
 
-  ctx.save();
-  ctx.translate(cw, 0);
-  ctx.rotate(Math.PI / 2);
+  sctx.setTransform(1, 0, 0, 1, 0, 0);
+  sctx.fillStyle = "#000";
+  sctx.fillRect(0, 0, cw, ch);
+
+  sctx.save();
+  sctx.translate(cw, 0);
+  sctx.rotate(Math.PI / 2);
 
   const destW = ch;
   const destH = cw;
@@ -87,7 +101,16 @@ function drawLandscapeVideoAsPortrait(
     sy = Math.round((vh - sh) / 2);
   }
 
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
+  sctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
+  sctx.restore();
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, cw, ch);
+  ctx.save();
+  ctx.translate(cw, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(scratch, 0, 0);
   ctx.restore();
 }
 
