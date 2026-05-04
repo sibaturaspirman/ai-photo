@@ -298,7 +298,7 @@ export default function CplResultPage() {
 
     const templatePath =
       tpl === 4
-        ? "/cpl/template-4.png"
+        ? "/cpl/template-4-fix.png"
         : tpl === 3
           ? "/cpl/template-3-fix.png"
           : tpl === 2
@@ -548,9 +548,9 @@ export default function CplResultPage() {
           <Image
             src={
               selectedTemplate === 4
-                ? "/cpl/template-4.png"
+                ? "/cpl/template-4-fix.png"
                 : selectedTemplate === 3
-                  ? "/cpl/template-3.png"
+                  ? "/cpl/template-3-fix.png"
                   : selectedTemplate === 2
                     ? "/cpl/template-2.png"
                     : "/cpl/template-1.png"
