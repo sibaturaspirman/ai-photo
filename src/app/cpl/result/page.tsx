@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Captures = {
   1: string | null;
@@ -12,6 +12,9 @@ type Captures = {
 };
 
 const EMPTY_CAPTURES: Captures = { 1: null, 2: null, 3: null };
+/** JPEG `toBlob` quality: upload (ukuran file) vs print (maks detail). */
+const JPEG_QUALITY_UPLOAD = 0.92;
+const JPEG_QUALITY_PRINT = 1;
 const DEBUG_ALWAYS_SHOW_QR_POPUP = false;
 const DEBUG_QR_VALUE = "https://example.com/debug-qr";
 const CANVAS_W = 1200;
@@ -86,6 +89,7 @@ function camStorageBase(template: number) {
 
 export default function CplResultPage() {
   const router = useRouter();
+  const printImgRef = useRef<HTMLImageElement | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState(1);
   const [captures, setCaptures] = useState<Captures>(EMPTY_CAPTURES);
   const [isUploading, setIsUploading] = useState(false);
@@ -204,7 +208,20 @@ export default function CplResultPage() {
     destCtx.drawImage(tmp, clipRect.x, clipRect.y);
   }
 
-  async function createCompositeBlob() {
+  function canvasToJpegBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (file) => {
+          if (file) resolve(file);
+          else reject(new Error("Gagal mengekspor gambar hasil komposit."));
+        },
+        "image/jpeg",
+        quality,
+      );
+    });
+  }
+
+  async function buildCompositeCanvas(): Promise<HTMLCanvasElement> {
     const canvas = document.createElement("canvas");
     canvas.width = 1200;
     canvas.height = 1800;
@@ -294,13 +311,7 @@ export default function CplResultPage() {
     const template = await loadImage(templatePath);
     ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
 
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((file) => resolve(file), "image/jpeg", 0.86);
-    });
-    if (!blob) {
-      throw new Error("Gagal mengekspor gambar hasil komposit.");
-    }
-    return blob;
+    return canvas;
   }
 
   async function uploadDirectToZirolu(
@@ -346,8 +357,26 @@ export default function CplResultPage() {
     if (!capturesReady || isUploading) return;
     setUploadError(null);
     setIsUploading(true);
+    let printObjectUrl: string | null = null;
     try {
-      const imageBlob = await createCompositeBlob();
+      const compositeCanvas = await buildCompositeCanvas();
+      const uploadBlob = await canvasToJpegBlob(compositeCanvas, JPEG_QUALITY_UPLOAD);
+      const printBlob = await canvasToJpegBlob(compositeCanvas, JPEG_QUALITY_PRINT);
+      printObjectUrl = URL.createObjectURL(printBlob);
+      const printEl = printImgRef.current;
+      if (printEl) {
+        await new Promise<void>((resolve, reject) => {
+          printEl.onload = () => {
+            if (typeof printEl.decode === "function") {
+              printEl.decode().then(() => resolve()).catch(() => resolve());
+            } else {
+              resolve();
+            }
+          };
+          printEl.onerror = () => reject(new Error("Gagal memuat gambar untuk print."));
+          printEl.src = printObjectUrl!;
+        });
+      }
       const name = window.localStorage.getItem("cpl-user-name") ?? "Guest";
       const phone = window.localStorage.getItem("cpl-user-phone") ?? "-";
       const formasi =
@@ -357,13 +386,13 @@ export default function CplResultPage() {
         | { file: string | null; id: string | number | null };
 
       if (process.env.NEXT_PUBLIC_ZIROLU_AUTH) {
-        data = await uploadDirectToZirolu(imageBlob, { name, phone, formasi });
+        data = await uploadDirectToZirolu(uploadBlob, { name, phone, formasi });
       } else {
         const payload = new FormData();
         payload.append("name", name);
         payload.append("phone", phone);
         payload.append("formasi", formasi);
-        payload.append("file", imageBlob, `${name}-photo-ai-zirolu.jpg`);
+        payload.append("file", uploadBlob, `${name}-photo-ai-zirolu.jpg`);
 
         const response = await fetch("/api/cpl/upload", {
           method: "POST",
@@ -389,10 +418,29 @@ export default function CplResultPage() {
       setUploadId(data.id ? String(data.id) : null);
       window.localStorage.setItem("faceURLResult", data.file);
 
+      const revokePrintUrl = () => {
+        if (printObjectUrl) {
+          URL.revokeObjectURL(printObjectUrl);
+          printObjectUrl = null;
+        }
+        if (printImgRef.current) {
+          printImgRef.current.removeAttribute("src");
+        }
+      };
+      window.addEventListener("afterprint", revokePrintUrl, { once: true });
+      window.setTimeout(revokePrintUrl, 120_000);
+
       window.setTimeout(() => {
         window.print();
       }, 250);
     } catch (error) {
+      if (printObjectUrl) {
+        URL.revokeObjectURL(printObjectUrl);
+        printObjectUrl = null;
+        if (printImgRef.current) {
+          printImgRef.current.removeAttribute("src");
+        }
+      }
       setUploadError(error instanceof Error ? error.message : "Upload gagal.");
     } finally {
       setIsUploading(false);
@@ -401,6 +449,15 @@ export default function CplResultPage() {
 
   return (
     <main className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden px-4 py-6">
+      <img
+        ref={printImgRef}
+        id="print-hires-only"
+        alt=""
+        width={1200}
+        height={1800}
+        className="pointer-events-none fixed left-0 top-0 h-px w-px opacity-0"
+        aria-hidden
+      />
       <div
         className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url(/cpl/bg.jpg)" }}
@@ -669,22 +726,22 @@ export default function CplResultPage() {
             visibility: hidden !important;
           }
 
-          #print-template-only,
-          #print-template-only * {
+          #print-hires-only {
             visibility: visible !important;
-          }
-
-          #print-template-only {
             position: fixed !important;
             inset: 0 !important;
             margin: auto !important;
-            width: 100vw !important;
-            max-width: 100vw !important;
+            width: auto !important;
             height: auto !important;
-            aspect-ratio: 2 / 3 !important;
-            border: none !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            min-width: 0 !important;
+            object-fit: contain !important;
+            object-position: center !important;
+            opacity: 1 !important;
+            z-index: 99999 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>
