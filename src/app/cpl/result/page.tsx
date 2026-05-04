@@ -300,7 +300,7 @@ export default function CplResultPage() {
       tpl === 4
         ? "/cpl/template-4.png"
         : tpl === 3
-          ? "/cpl/template-3.png"
+          ? "/cpl/template-3-fix.png"
           : tpl === 2
             ? "/cpl/template-2.png"
             : "/cpl/template-1.png";
