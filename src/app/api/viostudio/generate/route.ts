@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         );
       }
       const data = parseJsonSafe(raw) as { asset_id?: number; id?: number } | null;
-      const assetId = data.asset_id ?? data.id;
+      const assetId = data?.asset_id ?? data?.id;
       if (!assetId) {
         throw new Error("Asset upload succeeded but asset_id missing.");
       }
