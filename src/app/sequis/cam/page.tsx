@@ -593,13 +593,13 @@ export default function SequisCamPage() {
           </div>
         ) : null}
 
-        <button
+        {/* <button
           type="button"
           onClick={() => router.push("/sequis/template")}
           className="mt-2 rounded-md border border-white/20 px-4 py-2 text-sm"
         >
           Back to Template
-        </button>
+        </button> */}
       </div>
 
       {isGeneratingAi || DEBUG_ALWAYS_SHOW_LOADING ? (
