@@ -5,12 +5,11 @@ export default function SequisHomePage() {
   return (
     <Link
       href="/sequis/template"
-      className="relative isolate flex min-h-dvh w-full touch-manipulation items-center justify-center overflow-hidden p-4"
+      className="sequis-landscape-shell relative isolate flex min-h-dvh w-full touch-manipulation items-center justify-center overflow-hidden p-4"
       aria-label="Tap to continue to template selection"
     >
       <div
-        className="absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url(/sequis/bg.jpg)" }}
+        className="sequis-bg absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
         aria-hidden
       />
 
@@ -20,7 +19,7 @@ export default function SequisHomePage() {
         width={1451}
         height={2663}
         priority
-        className="h-auto w-[90vw] max-w-full object-contain"
+        className="h-auto w-[90vw] xl:w-[33%] xl:mt-[6rem]  max-w-full object-contain"
         sizes="100vw"
       />
     </Link>

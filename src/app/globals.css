@@ -25,3 +25,19 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+.sequis-bg {
+  background-image: url("/sequis/bg.jpg");
+  background-size: contain;
+}
+
+@media (orientation: landscape) {
+  .sequis-bg {
+    background-image: url("/sequis/bg-landscape.jpg");
+  }
+
+  .sequis-landscape-shell {
+    max-width: 1920px;
+    margin-inline: auto;
+  }
+}

@@ -78,7 +78,7 @@ export async function POST(req: Request) {
           image_urls: [reference1Url, reference2Url],
           num_images: 1,
           output_format: "png",
-          aspect_ratio: "9:16",
+          aspect_ratio: "2:3",
           safety_tolerance: "4",
         },
         logs: false,
