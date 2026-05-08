@@ -487,7 +487,7 @@ export default function SequisCamPage() {
 
       <div className="relative z-10 w-[73%] xl:w-[26%] translate-y-[4%] xl:translate-y-[8%] flex flex-col items-center gap-4">
         <Image
-          src="/sequis/ambil-foto.png"
+          src="/sequis/ambil-foto2.png"
           alt=""
           width={720}
           height={110}
