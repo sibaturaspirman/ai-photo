@@ -75,7 +75,13 @@ export default function SequisStylePage() {
           aria-disabled={!selectedStyle}
           onClick={() => {
             if (!selectedStyle) return;
-            router.push(`/sequis/cam?template=2&style=${selectedStyle}`);
+            const webcam4k = new URLSearchParams(window.location.search).get("webcam") === "4k";
+            const camPath = webcam4k ? "/sequis/cam2" : "/sequis/cam";
+            router.push(
+              webcam4k
+                ? `${camPath}?template=2&style=${selectedStyle}&webcam=4k`
+                : `${camPath}?template=2&style=${selectedStyle}`,
+            );
           }}
           className={`mx-auto mt-10 block w-[80%] ${!selectedStyle ? "pointer-events-none opacity-60" : ""}`}
         >

@@ -314,14 +314,45 @@ export default function SequisCamPage() {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "user",
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+      const constraintCandidates: MediaStreamConstraints[] = [
+        {
+          video: {
+            facingMode: "user",
+            width: { ideal: 3840, max: 3840 },
+            height: { ideal: 2160, max: 2160 },
+          },
+          audio: false,
         },
-        audio: false,
-      });
+        {
+          video: {
+            facingMode: "user",
+            width: { ideal: 2560 },
+            height: { ideal: 1440 },
+          },
+          audio: false,
+        },
+        {
+          video: {
+            facingMode: "user",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        },
+      ];
+
+      let stream: MediaStream | null = null;
+      for (const constraints of constraintCandidates) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          break;
+        } catch {
+          // Continue with next fallback.
+        }
+      }
+      if (!stream) {
+        throw new Error("Izin kamera ditolak atau kamera tidak tersedia.");
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;

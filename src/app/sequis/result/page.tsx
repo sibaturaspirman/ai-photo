@@ -27,12 +27,14 @@ export default function SequisResultPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [qrValue, setQrValue] = useState<string | null>(null);
   const [uploadId, setUploadId] = useState<string | null>(null);
+  const [webcam4kMode, setWebcam4kMode] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("sequis-result-image-url");
     const storedFrame = window.localStorage.getItem("sequis-result-frame-url");
     setResultImageUrl(stored);
     setResultFrameUrl(storedFrame);
+    setWebcam4kMode(new URLSearchParams(window.location.search).get("webcam") === "4k");
   }, []);
 
   useEffect(() => {
@@ -279,7 +281,7 @@ export default function SequisResultPage() {
               <Image src="/sequis/btn-download.png" alt="Download result" width={1024} height={216} className="h-auto w-full" />
             </button>
           ) : null}
-          <Link href="/sequis/template" className="block">
+          <Link href={webcam4kMode ? "/sequis/template?webcam=4k" : "/sequis/template"} className="block">
             <Image
               src="/cpl/btn-retake.png"
               alt="Retake"
@@ -312,12 +314,12 @@ export default function SequisResultPage() {
           tabIndex={0}
           aria-label="Kembali ke home"
           onClick={() => {
-            router.push("/sequis/home");
+            router.push(webcam4kMode ? "/sequis/home?webcam=4k" : "/sequis/home");
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              router.push("/sequis/home");
+              router.push(webcam4kMode ? "/sequis/home?webcam=4k" : "/sequis/home");
             }
           }}
         >

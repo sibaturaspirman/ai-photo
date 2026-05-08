@@ -74,11 +74,17 @@ export default function SequisTemplatePage() {
           aria-disabled={!selectedTemplate}
           onClick={() => {
             if (!selectedTemplate) return;
+            const webcam4k = new URLSearchParams(window.location.search).get("webcam") === "4k";
+            const camPath = webcam4k ? "/sequis/cam2" : "/sequis/cam";
             if (selectedTemplate === 2) {
-              router.push("/sequis/style");
+              router.push(webcam4k ? "/sequis/style?webcam=4k" : "/sequis/style");
               return;
             }
-            router.push(`/sequis/cam?template=${selectedTemplate}`);
+            router.push(
+              webcam4k
+                ? `${camPath}?template=${selectedTemplate}&webcam=4k`
+                : `${camPath}?template=${selectedTemplate}`,
+            );
           }}
           className={`block w-[80%] mx-auto mt-10 ${!selectedTemplate ? "pointer-events-none opacity-60" : ""}`}
         >

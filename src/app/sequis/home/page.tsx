@@ -1,10 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function SequisHomePage() {
+type HomePageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function SequisHomePage({ searchParams }: HomePageProps) {
+  const params = (await searchParams) ?? {};
+  const webcamRaw = params.webcam;
+  const webcam4k = Array.isArray(webcamRaw) ? webcamRaw.includes("4k") : webcamRaw === "4k";
+  const nextHref = webcam4k ? "/sequis/template?webcam=4k" : "/sequis/template";
+
   return (
     <Link
-      href="/sequis/template"
+      href={nextHref}
       className="sequis-landscape-shell relative isolate flex min-h-dvh w-full touch-manipulation items-center justify-center overflow-hidden p-4"
       aria-label="Tap to continue to template selection"
     >
