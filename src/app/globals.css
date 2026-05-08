@@ -28,7 +28,7 @@ body {
 
 .sequis-bg {
   background-image: url("/sequis/bg.jpg");
-  background-size: contain;
+  background-size: cover;
 }
 
 @media (orientation: landscape) {
