@@ -41,3 +41,190 @@ body {
     margin-inline: auto;
   }
 }
+
+/* Eiger kiosk frame: 1080×1920 max, full viewport on mobile */
+.eiger-viewport {
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+  justify-content: center;
+  align-items: stretch;
+  background: #000;
+}
+
+.eiger-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: min(100vw, 1080px);
+  height: min(100dvh, 1920px);
+  min-height: 100dvh;
+  max-width: 1080px;
+  max-height: 1920px;
+  margin-inline: auto;
+  overflow: hidden;
+  background-color: #000;
+}
+
+.eiger-shell__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  /* flex: 1; */
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  margin-top: 10vw;
+}
+
+.eiger-shell--black {
+  background-color: #000;
+}
+
+.eiger-shell--scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.eiger-shell--scroll .eiger-content {
+  flex: none;
+  min-height: 100%;
+  justify-content: flex-start;
+}
+
+.eiger-content {
+  display: flex;
+  /* flex: 1; */
+  flex-direction: column;
+  width: 80%;
+  max-width: 100%;
+  min-height: 0;
+  margin-inline: auto;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 3.5vw, 2.5rem);
+}
+
+.eiger-title {
+  flex-shrink: 0;
+  text-align: center;
+  /* font-size: clamp(1.125rem, 3.2vw, 1.75rem); */
+  font-size: 3.2vw;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 45%);
+}
+
+.eiger-cam-preview {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.eiger-cam-preview__frame {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  width: 80%;
+  height: auto;
+  /* max-width: 70%; */
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: clamp(0.75rem, 2vw, 1.25rem);
+  border: 4px solid rgb(255 255 255 / 40%);
+  background: #000;
+  box-shadow: 0 20px 40px rgb(0 0 0 / 35%);
+}
+
+.eiger-actions {
+  flex-shrink: 0;
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  flex-direction: column;
+  gap: clamp(0.625rem, 2vw, 1rem);
+  padding-top: clamp(0.75rem, 2vh, 1.5rem);
+}
+
+.eiger-btn {
+  display: block;
+  width: 100%;
+  border-radius: 9999px;
+  padding: clamp(0.875rem, 2.5vw, 1.25rem) clamp(1.5rem, 5vw, 2.5rem);
+  text-align: center;
+  /* font-size: clamp(0.9375rem, 2.8vw, 1.125rem); */
+  font-size: 2.8vw;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #e87722;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.eiger-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.eiger-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.eiger-btn--secondary {
+  border: 2px solid #fff;
+  background: rgb(255 255 255 / 10%);
+  backdrop-filter: blur(4px);
+  box-shadow: none;
+}
+
+.eiger-countdown {
+  font-size: clamp(4rem, 22vw, 12rem);
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  filter: drop-shadow(0 4px 12px rgb(0 0 0 / 60%));
+}
+
+.eiger-preview-stack {
+  position: relative;
+  aspect-ratio: 783 / 1086;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: clamp(0.75rem, 2vw, 1.25rem);
+  border: 4px solid rgb(255 255 255 / 40%);
+  background: rgb(0 0 0 / 20%);
+  box-shadow: 0 20px 40px rgb(0 0 0 / 35%);
+}
+
+@media (min-width: 1080px) and (min-height: 1920px) {
+  .eiger-shell {
+    height: 1920px;
+    min-height: unset;
+  }
+}
+
+.eiger-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  top: -10vw;
+}

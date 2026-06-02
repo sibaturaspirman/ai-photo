@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI Photo Studio · fal.ai",
+  title: "AI Photo Studio · Zirolu.id",
   description:
-    "Generate gambar AI dari prompt teks menggunakan model fal.ai (FLUX, SDXL, dll).",
+    "Generate gambar AI dari Zirolu.id",
 };
 
 export default function RootLayout({
