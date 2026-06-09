@@ -4,6 +4,7 @@ import {
   INACO_OUTFIT_1_HANBOK_REFS,
   INACO_TEMA_5_CHARACTERS,
   buildInacoExtraRefPaths as buildInacoExtraRefPathsV3,
+  buildInacoOutfit1HanbokPrompt,
   buildInacoPromptV3,
   inacoOutfit1HanbokRefPaths,
   inacoTema5CharacterPath,
@@ -53,6 +54,8 @@ type InacoTema5ImageMap = {
   scene: 3;
   hanbokMale?: number;
   hanbokFemale?: number;
+  hanbokMaleAccessory?: number;
+  hanbokFemaleAccessory?: number;
 };
 
 function buildInacoTema5ImageMap(outfit: number): InacoTema5ImageMap {
@@ -61,6 +64,8 @@ function buildInacoTema5ImageMap(outfit: number): InacoTema5ImageMap {
   if (outfit === 1) {
     map.hanbokMale = index++;
     map.hanbokFemale = index++;
+    map.hanbokMaleAccessory = index++;
+    map.hanbokFemaleAccessory = index++;
   }
   return map;
 }
@@ -151,23 +156,6 @@ Layout: photorealistic person(s) from IMAGE 1 and mascot from IMAGE ${imageMap.m
 `;
 }
 
-function buildInacoTema5Outfit1HanbokPrompt(map: InacoTema5ImageMap) {
-  if (!map.hanbokMale || !map.hanbokFemale) {
-    return "";
-  }
-
-  return `For outfit 1 (Hanbok), IMAGE ${map.hanbokMale} and IMAGE ${map.hanbokFemale} are GARMENT-ONLY references (torso/clothing crops). Extract Hanbok fabric design, color, and pattern only. Do NOT copy any person, face, head, hair, or hijab from these images.
-
-Male Hanbok (IMAGE ${map.hanbokMale}): dusty slate-blue jeogori/baeja, white collar trim, floral damask, cream sleeves, blue goreum bow, silver norigae tassel.
-Female Hanbok (IMAGE ${map.hanbokFemale}): cream jeogori, pink otgoreum bow, dusty pink pleated chima, lace floral pattern, pink norigae tassel.
-
-Dress each person from IMAGE 1 in the matching Hanbok by apparent gender. Change clothing only—face, hijab, and identity stay 100% from IMAGE 1. If IMAGE 1 shows hijab, keep hijab and fit jeogori/chima around it.
-
-Do not add, remove, merge, split, or duplicate any person. Human count in output must exactly match IMAGE 1. Hanbok reference models must not appear as people in the output.
-
-`;
-}
-
 function buildInacoTema5OutfitPrompt(outfit: number) {
   if (outfit === 1) {
     return "Dress only the person(s) from IMAGE 1 in the campaign Hanbok outfit described above—do not introduce any person from the Hanbok reference images.";
@@ -186,6 +174,12 @@ function buildInacoTema5ImageInstructions(imageMap: InacoTema5ImageMap) {
   if (imageMap.hanbokMale) {
     lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (no face/head).`);
     lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (no face/head).`);
+    lines.push(
+      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+    );
+    lines.push(
+      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+    );
   }
 
   return `${lines.join("\n")}\n\n`;
@@ -195,7 +189,7 @@ function buildInacoPromptV4Tema5(outfit: number, tema5CharacterId?: InacoTema5Ch
   const characterId = tema5CharacterId ?? pickRandomTema5CharacterId();
   const imageMap = buildInacoTema5ImageMap(outfit);
   const mascotPrompt = buildInacoTema5MascotPrompt(characterId, imageMap);
-  const hanbokPrompt = buildInacoTema5Outfit1HanbokPrompt(imageMap);
+  const hanbokPrompt = buildInacoOutfit1HanbokPrompt(imageMap);
   const outfitPrompt = buildInacoTema5OutfitPrompt(outfit);
   const imageInstructions = buildInacoTema5ImageInstructions(imageMap);
 

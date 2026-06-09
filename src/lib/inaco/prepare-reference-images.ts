@@ -27,7 +27,7 @@ export async function cropBlobToGarmentRegion(blob: Blob) {
 
 export async function fetchInacoExtraReferenceBlob(path: string, outfit: number) {
   const blob = await fetch(path).then((res) => res.blob());
-  if (outfit === 1 && path.includes("outfit-1-")) {
+  if (outfit === 1 && path.includes("outfit-1-") && !path.includes("aksesoris")) {
     return cropBlobToGarmentRegion(blob);
   }
   return blob;

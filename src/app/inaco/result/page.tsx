@@ -237,7 +237,7 @@ export default function InacoResultPage() {
               />
             </button>
           ) : null}
-          <Link href="/inaco/template" className="block">
+          {/* <Link href="/inaco/template" className="block">
             <Image
               src="/inaco/btn-selanjutnya.png"
               alt="Ulangi"
@@ -245,7 +245,7 @@ export default function InacoResultPage() {
               height={240}
               className="h-auto w-full opacity-80"
             />
-          </Link>
+          </Link> */}
         </div>
 
         {printError ? <p className="text-center text-sm text-red-300">{printError}</p> : null}

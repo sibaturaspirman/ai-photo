@@ -34,6 +34,11 @@ export const INACO_OUTFIT_1_HANBOK_REFS = {
   femaleOutfit: "/inaco/outfit-1-cewek.jpg",
 } as const;
 
+export const INACO_OUTFIT_1_HANBOK_ACCESSORY_REFS = {
+  maleAccessory: "/inaco/outfit-1-cowok-aksesoris.jpg",
+  femaleAccessory: "/inaco/outfit-1-cewek-aksesoris.jpg",
+} as const;
+
 export function pickRandomTema5CharacterId(): InacoTema5CharacterId {
   const ids: InacoTema5CharacterId[] = [1, 2, 3];
   return ids[Math.floor(Math.random() * ids.length)]!;
@@ -44,7 +49,12 @@ export function inacoTema5CharacterPath(id: InacoTema5CharacterId) {
 }
 
 export function inacoOutfit1HanbokRefPaths() {
-  return [INACO_OUTFIT_1_HANBOK_REFS.maleOutfit, INACO_OUTFIT_1_HANBOK_REFS.femaleOutfit];
+  return [
+    INACO_OUTFIT_1_HANBOK_REFS.maleOutfit,
+    INACO_OUTFIT_1_HANBOK_REFS.femaleOutfit,
+    INACO_OUTFIT_1_HANBOK_ACCESSORY_REFS.maleAccessory,
+    INACO_OUTFIT_1_HANBOK_ACCESSORY_REFS.femaleAccessory,
+  ];
 }
 
 /** Extra refs after IMAGE 1 (person) and IMAGE 2 (tema), in upload order. */
@@ -67,6 +77,8 @@ type InacoImageMap = {
   mascot?: number;
   hanbokMale?: number;
   hanbokFemale?: number;
+  hanbokMaleAccessory?: number;
+  hanbokFemaleAccessory?: number;
 };
 
 function buildInacoImageMap(tema: number, outfit: number): InacoImageMap {
@@ -79,6 +91,8 @@ function buildInacoImageMap(tema: number, outfit: number): InacoImageMap {
   if (outfit === 1) {
     map.hanbokMale = index++;
     map.hanbokFemale = index++;
+    map.hanbokMaleAccessory = index++;
+    map.hanbokFemaleAccessory = index++;
   }
 
   return map;
@@ -141,8 +155,8 @@ Compose like IMAGE 2: person(s) from IMAGE 1 on the left, mascot from IMAGE ${ma
 `;
 }
 
-function buildInacoOutfit1HanbokPrompt(map: InacoImageMap) {
-  if (!map.hanbokMale || !map.hanbokFemale) {
+export function buildInacoOutfit1HanbokPrompt(map: InacoImageMap) {
+  if (!map.hanbokMale || !map.hanbokFemale || !map.hanbokMaleAccessory || !map.hanbokFemaleAccessory) {
     return "";
   }
 
@@ -151,7 +165,13 @@ function buildInacoOutfit1HanbokPrompt(map: InacoImageMap) {
 Male Hanbok (IMAGE ${map.hanbokMale}): dusty slate-blue jeogori/baeja, white collar trim, floral damask, cream sleeves, blue goreum bow, silver norigae tassel.
 Female Hanbok (IMAGE ${map.hanbokFemale}): cream jeogori, pink otgoreum bow, dusty pink pleated chima, lace floral pattern, pink norigae tassel.
 
-Dress each person from IMAGE 1 in the matching Hanbok by apparent gender. Change clothing only—face, hijab, and identity stay 100% from IMAGE 1. If IMAGE 1 shows hijab, keep hijab and fit jeogori/chima around it.
+Dress each person from IMAGE 1 in the matching Hanbok by apparent gender. Change clothing only—face and identity stay 100% from IMAGE 1.
+
+HEAD COVERING RULES (outfit 1):
+- If IMAGE 1 shows hijab/headscarf: keep hijab exactly as in IMAGE 1—same coverage, color, and wrap. Fit jeogori/chima around the hijab. Do NOT add Hanbok head accessories on top of hijab.
+- If IMAGE 1 does NOT show hijab: add traditional Korean Hanbok head accessories from the accessory references below. Copy ONLY the accessory style—not the reference model's face or identity.
+  • Male without hijab (IMAGE ${map.hanbokMaleAccessory}): black manggeon mesh headband, sangtu topknot, silver sangtugwan cap with decorative pin—match this reference accessory set.
+  • Female without hijab (IMAGE ${map.hanbokFemaleAccessory}): baessidaenggi ornamental headpiece centered on the hair parting with pink beaded tassel—match this reference accessory style.
 
 Do not add, remove, merge, split, or duplicate any person. Human count in output must exactly match IMAGE 1. Hanbok reference models must not appear as people in the output.
 
@@ -196,6 +216,12 @@ function buildInacoImageInstructions(tema: number, outfit: number, imageMap: Ina
   if (imageMap.hanbokMale) {
     lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (no face/head).`);
     lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (no face/head).`);
+    lines.push(
+      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+    );
+    lines.push(
+      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+    );
   }
 
   return `${lines.join("\n")}\n\n`;
