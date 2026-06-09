@@ -50,10 +50,10 @@ export function inacoTema5CharacterPath(id: InacoTema5CharacterId) {
 
 export function inacoOutfit1HanbokRefPaths() {
   return [
-    INACO_OUTFIT_1_HANBOK_REFS.maleOutfit,
-    INACO_OUTFIT_1_HANBOK_REFS.femaleOutfit,
     INACO_OUTFIT_1_HANBOK_ACCESSORY_REFS.maleAccessory,
     INACO_OUTFIT_1_HANBOK_ACCESSORY_REFS.femaleAccessory,
+    INACO_OUTFIT_1_HANBOK_REFS.maleOutfit,
+    INACO_OUTFIT_1_HANBOK_REFS.femaleOutfit,
   ];
 }
 
@@ -89,10 +89,10 @@ function buildInacoImageMap(tema: number, outfit: number): InacoImageMap {
     map.mascot = index++;
   }
   if (outfit === 1) {
-    map.hanbokMale = index++;
-    map.hanbokFemale = index++;
     map.hanbokMaleAccessory = index++;
     map.hanbokFemaleAccessory = index++;
+    map.hanbokMale = index++;
+    map.hanbokFemale = index++;
   }
 
   return map;
@@ -160,20 +160,47 @@ export function buildInacoOutfit1HanbokPrompt(map: InacoImageMap) {
     return "";
   }
 
-  return `For outfit 1 (Hanbok), IMAGE ${map.hanbokMale} and IMAGE ${map.hanbokFemale} are GARMENT-ONLY references (torso/clothing crops). Extract Hanbok fabric design, color, and pattern only. Do NOT copy any person, face, head, hair, or hijab from these images.
+  return `=== OUTFIT 1 HANBOK (MANDATORY) ===
+
+=== HANBOK HEAD ACCESSORY — HIGHEST PRIORITY FOR OUTFIT 1 ===
+For outfit 1, every person WITHOUT hijab in IMAGE 1 MUST wear traditional Korean Hanbok head accessories in the output. This is mandatory—not optional.
+An outfit-1 output showing bare/modern unstyled hair on a non-hijab person is WRONG and invalid.
+
+Per person in IMAGE 1:
+• HIJAB / HEADSCARF VISIBLE → keep hijab exactly from IMAGE 1 (coverage, color, wrap). Fit jeogori/chima around hijab. Do NOT add Hanbok head accessories on top.
+• NO HIJAB / NO HEADSCARF → MUST add Hanbok head accessory matching gender:
+  - Apparent male → IMAGE ${map.hanbokMaleAccessory}: black manggeon mesh headband, sangtu topknot, silver sangtugwan cap with decorative pin. Accessory must be clearly visible on the person's head in the final image.
+  - Apparent female → IMAGE ${map.hanbokFemaleAccessory}: baessidaenggi ornamental headpiece centered on the hair parting with pink beaded tassel. Accessory must be clearly visible on the person's head in the final image.
+
+IMAGE ${map.hanbokMaleAccessory} and IMAGE ${map.hanbokFemaleAccessory} are HEAD-ACCESSORY-ONLY references. Copy the accessory design, placement, and style only—never the reference model's face, skin, or identity. Face and identity always stay from IMAGE 1.
+=== END HANBOK HEAD ACCESSORY ===
+
+GARMENTS (torso/clothing crops only):
+IMAGE ${map.hanbokMale} and IMAGE ${map.hanbokFemale} are GARMENT-ONLY references. Extract Hanbok fabric design, color, and pattern only. Do NOT copy any face, head, hair, or hijab from these images.
 
 Male Hanbok (IMAGE ${map.hanbokMale}): dusty slate-blue jeogori/baeja, white collar trim, floral damask, cream sleeves, blue goreum bow, silver norigae tassel.
 Female Hanbok (IMAGE ${map.hanbokFemale}): cream jeogori, pink otgoreum bow, dusty pink pleated chima, lace floral pattern, pink norigae tassel.
 
-Dress each person from IMAGE 1 in the matching Hanbok by apparent gender. Change clothing only—face and identity stay 100% from IMAGE 1.
+Dress each person from IMAGE 1 in the matching Hanbok by apparent gender. Face and identity stay 100% from IMAGE 1.
 
-HEAD COVERING RULES (outfit 1):
-- If IMAGE 1 shows hijab/headscarf: keep hijab exactly as in IMAGE 1—same coverage, color, and wrap. Fit jeogori/chima around the hijab. Do NOT add Hanbok head accessories on top of hijab.
-- If IMAGE 1 does NOT show hijab: add traditional Korean Hanbok head accessories from the accessory references below. Copy ONLY the accessory style—not the reference model's face or identity.
-  • Male without hijab (IMAGE ${map.hanbokMaleAccessory}): black manggeon mesh headband, sangtu topknot, silver sangtugwan cap with decorative pin—match this reference accessory set.
-  • Female without hijab (IMAGE ${map.hanbokFemaleAccessory}): baessidaenggi ornamental headpiece centered on the hair parting with pink beaded tassel—match this reference accessory style.
+Do not add, remove, merge, split, or duplicate any person. Human count in output must exactly match IMAGE 1. Reference models must not appear as people in the output.
+=== END OUTFIT 1 HANBOK ===
 
-Do not add, remove, merge, split, or duplicate any person. Human count in output must exactly match IMAGE 1. Hanbok reference models must not appear as people in the output.
+`;
+}
+
+export const INACO_OUTFIT_1_IDENTITY_ADDENDUM = `OUTFIT 1 HEAD RULE: Face/identity always from IMAGE 1. Hijab wearers → keep hijab unchanged. Non-hijab wearers → MUST wear Hanbok head accessory (mandatory)—this overrides keeping bare hair from IMAGE 1.
+
+`;
+
+export function buildInacoOutfit1FinalCheck() {
+  return `=== FINAL CHECK (OUTFIT 1) ===
+1) Human count in output = human count in IMAGE 1 (exact match).
+2) Same face and identity from IMAGE 1 for every person.
+3) Hijab wearers: hijab unchanged from IMAGE 1.
+4) Non-hijab wearers: Hanbok head accessory clearly visible (male or female style per apparent gender)—mandatory.
+5) Hanbok garments applied. No reference models as people in output.
+=== END FINAL CHECK ===
 
 `;
 }
@@ -214,14 +241,14 @@ function buildInacoImageInstructions(tema: number, outfit: number, imageMap: Ina
     lines.push(`Use IMAGE ${imageMap.mascot} as the single mascot reference (appearance and pose).`);
   }
   if (imageMap.hanbokMale) {
-    lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (no face/head).`);
-    lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (no face/head).`);
     lines.push(
-      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok HEAD ACCESSORY reference (mandatory for non-hijab males in IMAGE 1)—accessory style only, not face.`,
     );
     lines.push(
-      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok HEAD ACCESSORY reference (mandatory for non-hijab females in IMAGE 1)—accessory style only, not face.`,
     );
+    lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (torso/clothing crop—no face/head).`);
+    lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (torso/clothing crop—no face/head).`);
   }
 
   return `${lines.join("\n")}\n\n`;
@@ -242,16 +269,23 @@ export function buildInacoPromptV3(
       ? `Hybrid composition: photorealistic person(s) from IMAGE 1, illustrated mascot from IMAGE ${imageMap.mascot}, background from IMAGE 2. Natural lighting on real person(s), sharp details.`
       : "Photorealistic commercial photo, natural lighting integration, sharp details.";
 
+  const identityAddendum = outfit === 1 ? INACO_OUTFIT_1_IDENTITY_ADDENDUM : "";
+  const finalCheck = outfit === 1 ? buildInacoOutfit1FinalCheck() : INACO_IDENTITY_LOCK_FOOTER;
+  const outfit1Forbidden =
+    outfit === 1
+      ? " FORBIDDEN for outfit 1: non-hijab person with bare/modern hair and no Hanbok head accessory."
+      : "";
+
   const personInstructions =
     tema === 5
-      ? `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones. Every face and hijab unchanged from IMAGE 1. Mascot allowed (not a human).`
-      : `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones, no extras, no removals. Composite each person from IMAGE 1 into the scene and mood of IMAGE 2. Preserve exact face, facial features, skin tone, body shape, proportions, pose, expression, hijab/head covering, and relative positions or grouping exactly as shown in IMAGE 1.`;
+      ? `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones. Every face unchanged from IMAGE 1.${outfit === 1 ? " Non-hijab wearers must have Hanbok head accessories." : " Every face and hijab unchanged from IMAGE 1."} Mascot allowed (not a human).`
+      : `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones, no extras, no removals. Composite each person from IMAGE 1 into the scene and mood of IMAGE 2. Preserve exact face, facial features, skin tone, body shape, proportions, pose, expression, and relative positions or grouping exactly as shown in IMAGE 1.${outfit === 1 ? " Head rule: hijab unchanged if present; non-hijab wearers MUST get Hanbok head accessories." : " Preserve hijab/head covering exactly as shown in IMAGE 1."}`;
 
-  return `${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${imageInstructions}${personInstructions}
+  return `${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${identityAddendum}${imageInstructions}${personInstructions}
 Dress each person from IMAGE 1 in Inaco outfit style ${outfit}.
 
 Create a highly detailed, vibrant image featuring exactly the same human subject(s) from IMAGE 1—same count, no duplicates, no extra humans anywhere in frame—standing against ${landmark}. ${outfitPrompt} Crop from head to just above the knees. Background, sky, atmosphere, and lighting from IMAGE 2. Cultural authenticity, vivid colors, balanced composition.
 
 ${renderStyle}
-${INACO_IDENTITY_LOCK_FOOTER}${INACO_FORBIDDEN_RULES}`;
+${finalCheck}${INACO_FORBIDDEN_RULES}${outfit1Forbidden}`;
 }

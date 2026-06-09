@@ -1,6 +1,16 @@
 import type { MetadataRoute } from "next";
+import { PWA_ENABLED } from "@/lib/pwa/config";
 
 export default function manifest(): MetadataRoute.Manifest {
+  if (!PWA_ENABLED) {
+    return {
+      name: "AI Photo Studio",
+      short_name: "AI Photo",
+      start_url: "/",
+      display: "browser",
+    };
+  }
+
   return {
     name: "AI Photo Studio",
     short_name: "AI Photo",

@@ -1,15 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa/pwa-register";
+import { PWA_ENABLED } from "@/lib/pwa/config";
 
 export const metadata: Metadata = {
   title: "AI Photo Studio · Zirolu.id",
   description: "Generate gambar AI dari Zirolu.id",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "AI Photo",
-  },
+  ...(PWA_ENABLED
+    ? {
+        appleWebApp: {
+          capable: true,
+          statusBarStyle: "default" as const,
+          title: "AI Photo",
+        },
+      }
+    : {}),
 };
 
 export const viewport: Viewport = {

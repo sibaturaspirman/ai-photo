@@ -2,8 +2,10 @@
 
 import {
   INACO_OUTFIT_1_HANBOK_REFS,
+  INACO_OUTFIT_1_IDENTITY_ADDENDUM,
   INACO_TEMA_5_CHARACTERS,
   buildInacoExtraRefPaths as buildInacoExtraRefPathsV3,
+  buildInacoOutfit1FinalCheck,
   buildInacoOutfit1HanbokPrompt,
   buildInacoPromptV3,
   inacoOutfit1HanbokRefPaths,
@@ -62,10 +64,10 @@ function buildInacoTema5ImageMap(outfit: number): InacoTema5ImageMap {
   let index = 4;
   const map: InacoTema5ImageMap = { person: 1, mascot: 2, scene: 3 };
   if (outfit === 1) {
-    map.hanbokMale = index++;
-    map.hanbokFemale = index++;
     map.hanbokMaleAccessory = index++;
     map.hanbokFemaleAccessory = index++;
+    map.hanbokMale = index++;
+    map.hanbokFemale = index++;
   }
   return map;
 }
@@ -172,14 +174,14 @@ function buildInacoTema5ImageInstructions(imageMap: InacoTema5ImageMap) {
   ];
 
   if (imageMap.hanbokMale) {
-    lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (no face/head).`);
-    lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (no face/head).`);
     lines.push(
-      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok HEAD ACCESSORY reference (mandatory for non-hijab males in IMAGE 1)—accessory style only, not face.`,
     );
     lines.push(
-      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok head accessory reference only (for persons without hijab in IMAGE 1).`,
+      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok HEAD ACCESSORY reference (mandatory for non-hijab females in IMAGE 1)—accessory style only, not face.`,
     );
+    lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (torso/clothing crop—no face/head).`);
+    lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (torso/clothing crop—no face/head).`);
   }
 
   return `${lines.join("\n")}\n\n`;
@@ -195,15 +197,26 @@ function buildInacoPromptV4Tema5(outfit: number, tema5CharacterId?: InacoTema5Ch
 
   const renderStyle = `Hybrid composition: photorealistic person(s) from IMAGE 1 and 3D illustrated mascot from IMAGE ${imageMap.mascot} posing close together like a foto bareng (friendly interactive buddy photo—not far apart). Mascot faithful to IMAGE ${imageMap.mascot} reference in 3D CGI style—not flat 2D. Illustrated background from IMAGE ${imageMap.scene}. Person stays photorealistic with natural lighting and sharp facial detail.`;
 
-  return `${INACO_TEMA5_HUMAN_REQUIRED}${INACO_TEMA5_TOGETHER_POSE_LOCK}${INACO_TEMA5_MASCOT_STYLE_LOCK}${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${imageInstructions}${mascotPrompt}${hanbokPrompt}
-HUMAN COUNT LOCK: photorealistic humans in output = humans in IMAGE 1 exactly. Person from IMAGE 1 must be visible—not optional.
+  const identityAddendum = outfit === 1 ? INACO_OUTFIT_1_IDENTITY_ADDENDUM : "";
+  const finalCheck = outfit === 1 ? buildInacoOutfit1FinalCheck() : INACO_IDENTITY_LOCK_FOOTER;
+  const outfit1Forbidden =
+    outfit === 1
+      ? " FORBIDDEN for outfit 1: non-hijab person with bare/modern hair and no Hanbok head accessory."
+      : "";
+  const headRule =
+    outfit === 1
+      ? " Non-hijab wearers must have Hanbok head accessories clearly visible."
+      : "";
+
+  return `${INACO_TEMA5_HUMAN_REQUIRED}${INACO_TEMA5_TOGETHER_POSE_LOCK}${INACO_TEMA5_MASCOT_STYLE_LOCK}${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${identityAddendum}${imageInstructions}${mascotPrompt}${hanbokPrompt}
+HUMAN COUNT LOCK: photorealistic humans in output = humans in IMAGE 1 exactly. Person from IMAGE 1 must be visible—not optional.${headRule}
 
 Dress each person from IMAGE 1 in Inaco outfit style ${outfit}.
 
 Create a vibrant campaign foto-bareng image—the photorealistic subject(s) from IMAGE 1 and the mascot from IMAGE ${imageMap.mascot} close together, interacting naturally, against ${INACO_TEMA_5_LANDMARK}. ${outfitPrompt} Crop from head to just above the knees. Background and lighting from IMAGE ${imageMap.scene}.
 
 ${renderStyle}
-${INACO_IDENTITY_LOCK_FOOTER}${INACO_FORBIDDEN_RULES}`;
+${finalCheck}${INACO_FORBIDDEN_RULES}${outfit1Forbidden}`;
 }
 
 /** Tema 1–4 → v3 unchanged. Tema 5 → v4. */
