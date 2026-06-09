@@ -252,7 +252,7 @@ body {
 }
 
 .inaco-form-page--keyboard-open .inaco-form {
-  transform: translateY(-21%);
+  transform: translateY(-25%);
 }
 
 @media (orientation: landscape) {

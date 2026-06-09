@@ -200,7 +200,7 @@ export default function InacoFormPage() {
           {showPhoneError ? <p className="inaco-form__error">{phoneError}</p> : null}
         </div>
 
-        <div className="inaco-form__field">
+        <div className="inaco-form__field !mb-0">
           <p className="inaco-form__label">Akun Sosial Media</p>
           <div className="inaco-form__social-toggle">
             <button
