@@ -89,8 +89,7 @@ export const INACO_TEMA_COUNT = 5;
 export const INACO_OUTFIT_COUNT = 2;
 
 export function inacoTemaThumbPath(id: number) {
-  if (id >= 1 && id <= 4) return `/inaco/tema-${id}.png`;
-  return `/inaco/tema-${id}.jpg`;
+  return inacoTemaRefPath(id);
 }
 
 export function inacoTemaRefPath(id: number) {
