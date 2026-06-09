@@ -31,6 +31,222 @@ body {
   background-size: cover;
 }
 
+.inaco-bg {
+  background-image: url("/inaco/bg.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.inaco-landscape-shell {
+  max-width: 1080px;
+  margin-inline: auto;
+}
+
+.inaco-processing {
+  background-image: url("/inaco/bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.inaco-processing__content {
+  display: flex;
+  width: min(88vw, 560px);
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding-inline: 1.5rem;
+}
+
+.inaco-processing__percent {
+  color: #b02e5d;
+  font-size: 12vw;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.inaco-processing__bar {
+  width: 100%;
+  height: 5vw;
+  overflow: hidden;
+  border: 2px solid #b02e5d;
+  border-radius: 999px;
+  background: #fff;
+  padding: 3px;
+}
+
+.inaco-processing__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e45a92 0%, #c93d72 52%, #b02e5d 100%);
+  box-shadow:
+    inset 0 2px 5px rgba(255, 255, 255, 0.5),
+    inset 0 -3px 6px rgba(120, 20, 55, 0.25);
+  transition: width 220ms ease-out;
+}
+
+.inaco-processing__status {
+  color: #b02e5d;
+  text-align: center;
+}
+
+.inaco-processing__status-title {
+  font-size: 5vw;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.inaco-processing__status-subtitle {
+  margin-top: 0.35rem;
+  font-size: 4.2vw;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.inaco-form {
+  display: flex;
+  width: 78vw;
+  max-width: 842px;
+  flex-direction: column;
+  gap: 2.5vw;
+  transform: translateY(-6%);
+}
+
+.inaco-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 1vw;
+}
+
+.inaco-form__label {
+  color: #b02e5d;
+  font-size: 4vw;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.inaco-form__input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: 1.6vw 2vw;
+  color: #111827;
+  font-size: 3.5vw;
+  line-height: 1.2;
+  text-align: center;
+  outline: none;
+}
+
+.inaco-form__input::placeholder {
+  color: #94a3b8;
+}
+
+.inaco-form__input:focus {
+  border-color: #b02e5d;
+}
+
+.inaco-form__social-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2vw;
+}
+
+.inaco-form__social-btn {
+  border: none;
+  border-radius: 999px;
+  background: #9ca3af;
+  padding: 1.4vw 1vw;
+  color: #fff;
+  font-size: 3.2vw;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  transition: background-color 160ms ease;
+}
+
+.inaco-form__social-btn--active {
+  background: #e04585;
+}
+
+.inaco-form__hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8vw;
+  border-radius: 999px;
+  background: rgb(148 163 184 / 0.35);
+  padding: 1vw 1.8vw;
+  color: #64748b;
+  font-size: 2.6vw;
+  line-height: 1.2;
+}
+
+.inaco-form__hint-icon {
+  display: inline-flex;
+  height: 2.8vw;
+  width: 2.8vw;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #94a3b8;
+  color: #fff;
+  font-size: 2vw;
+  font-weight: 700;
+}
+
+.inaco-form__submit {
+  width: 100%;
+  border: none;
+  background: #6b7280;
+  padding: 1.8vw 2vw;
+  color: #d1d5db;
+  font-size: 4.2vw;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.inaco-form__submit--active {
+  background: #e04585;
+  color: #fff;
+  cursor: pointer;
+}
+
+.inaco-form__submit:disabled {
+  cursor: not-allowed;
+}
+
+.inaco-form__input--active {
+  border-color: #e04585;
+  box-shadow: 0 0 0 2px rgb(224 69 133 / 0.25);
+}
+
+.inaco-form__input--error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgb(239 68 68 / 0.2);
+}
+
+.inaco-form__error {
+  color: #fecaca;
+  font-size: 2.4vw;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.inaco-form-page--keyboard-open .inaco-form {
+  transform: translateY(-32%);
+}
+
 @media (orientation: landscape) {
   .sequis-bg {
     background-image: url("/sequis/bg-landscape.jpg");

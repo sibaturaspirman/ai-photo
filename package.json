@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "precache": "node scripts/generate-precache-manifest.mjs",
+    "dev": "npm run precache && next dev",
+    "build": "npm run precache && next build",
     "start": "next start",
     "lint": "eslint"
   },
