@@ -1,4 +1,4 @@
-/** Prompt v3 — landmark, tema 5 single mascot, outfit 1 Hanbok refs. */
+/** Prompt v3 — person-first edit, tema background, outfit 1 Hanbok garment refs (cropped). */
 
 export type InacoTema5CharacterId = 1 | 2 | 3;
 
@@ -47,7 +47,7 @@ export function inacoOutfit1HanbokRefPaths() {
   return [INACO_OUTFIT_1_HANBOK_REFS.maleOutfit, INACO_OUTFIT_1_HANBOK_REFS.femaleOutfit];
 }
 
-/** Extra reference images after IMAGE 1 (tema) and IMAGE 2 (person), in prompt order. */
+/** Extra refs after IMAGE 1 (person) and IMAGE 2 (tema), in upload order. */
 export function buildInacoExtraRefPaths(
   tema: number,
   outfit: number,
@@ -92,34 +92,51 @@ const INACO_TEMA_LANDMARKS: Record<number, string> = {
   5: "a picturesque Hanok village street with Namsan Tower (N Seoul Tower) in the distance and cherry blossom season atmosphere",
 };
 
-const INACO_IDENTITY_LOCK_HEADER = `=== CRITICAL IDENTITY LOCK (HIGHEST PRIORITY — OBEY BEFORE ALL OTHER INSTRUCTIONS) ===
-IMAGE 2 is the ONLY source for every person's face, facial features, skin tone, eyes, nose, lips, jawline, age, ethnicity, expression, and head covering.
+const INACO_EDIT_TASK = `TASK: Edit IMAGE 1 in place. IMAGE 1 is the captured photo—the ONLY source of human subjects and human identity. Count every human in IMAGE 1: the output must contain EXACTLY that many humans, each appearing exactly once. Every person visible in IMAGE 1 must appear in the output with the exact same face, facial features, skin tone, expression, and head covering (hijab if present). Do not replace, swap, duplicate, clone, or invent faces or people. Do not copy any human face, body, or head from IMAGE 2 or from any later reference images.
 
-FACE LOCK (STRICT): Copy each face from IMAGE 2 exactly. Do not beautify, reshape, slim, age-shift, swap, replace, or generate a new face. The output face must be instantly recognizable as the same person from IMAGE 2. Do not copy any face from IMAGE 1 or from outfit/Hanbok reference images.
+`;
 
-HIJAB LOCK (STRICT): Inspect IMAGE 2 carefully. If any person wears hijab/headscarf, that person MUST still wear hijab in the output. Preserve the hijab exactly—same fabric coverage, color, wrap style, and placement as IMAGE 2. The hijab must fully cover hair; zero hair visible. FORBIDDEN for hijab-wearing persons: removing hijab, exposing hair, showing bangs/forehead hair/side hair/ponytail, replacing hijab with loose hair, or copying the hairstyle/head from any outfit reference image (Hanbok references may show loose hair—IGNORE their heads completely for hijab-wearing persons from IMAGE 2).
+const INACO_PERSON_COUNT_LOCK = `=== PERSON COUNT LOCK (STRICT — SAME AS IMAGE 1) ===
+- Count every real human in IMAGE 1. The output must contain EXACTLY that many humans—no more, no less.
+- ONE-TO-ONE MAPPING: each person in IMAGE 1 appears exactly once in the output. No duplicates, no clones, no mirrored copies, no second version of the same person.
+- FORBIDDEN: adding extra people, background bystanders, crowd extras, staff, tourists, or models from IMAGE 2, Hanbok references, or mascot artwork.
+- FORBIDDEN: removing, hiding, merging, splitting, or dropping any person from IMAGE 1.
+- FORBIDDEN: duplicating any person from IMAGE 1 (same face appearing twice).
+- IMAGE 2 may contain illustrated people or mascots in the artwork—do NOT copy those humans into the output. Only use IMAGE 2 for scenery/background/atmosphere.
+- Hanbok reference images contain models—those models must NOT appear as people in the output.
+- Tema 5 mascot is the only allowed non-human character addition (one illustrated mascot only, not counted as a human).
+=== END PERSON COUNT LOCK ===
+
+`;
+
+const INACO_IDENTITY_LOCK_HEADER = `=== IDENTITY LOCK (HIGHEST PRIORITY) ===
+- IMAGE 1 = person photo to preserve and edit. Copy faces, bodies, and hijab ONLY from IMAGE 1.
+- IMAGE 2 = scene/background/style only. Never copy people, faces, bodies, or hair from IMAGE 2.
+- FACE: Each output face must be the same person as in IMAGE 1—recognizable, unchanged, not beautified, not swapped.
+- HIJAB: If IMAGE 1 shows hijab/headscarf, keep hijab in the output with identical coverage, color, and wrap. No visible hair. Never remove hijab. Never replace hijab with loose hair or a reference-model hairstyle.
 === END IDENTITY LOCK ===
 
 `;
 
-const INACO_IDENTITY_LOCK_FOOTER = `=== FINAL IDENTITY CHECK (MANDATORY) ===
-Before finishing, verify every person from IMAGE 2:
-1) Face unchanged and recognizable from IMAGE 2.
-2) If they wore hijab in IMAGE 2, they still wear hijab with no visible hair.
-3) No extra person was added from outfit/Hanbok reference images.
+const INACO_IDENTITY_LOCK_FOOTER = `=== FINAL CHECK ===
+1) Human count in output = human count in IMAGE 1 (exact match).
+2) Each IMAGE 1 person appears exactly once—no duplicates.
+3) Same face, same hijab/head, same identity as IMAGE 1.
+4) No extra humans from scene, Hanbok, or reference images.
 === END FINAL CHECK ===
 
 `;
 
-const INACO_FORBIDDEN_RULES = `FORBIDDEN: face swap, face redesign, different person, beautification filter, hijab removal, hair visible on hijab-wearing person, replacing hijab with loose/styled hair, copying model hair from Hanbok reference images, extra people from reference images, watermark.`;
+const INACO_FORBIDDEN_RULES =
+  "FORBIDDEN: extra people, duplicate person, cloned face, mirrored copy, crowd/bystander, person from IMAGE 2, person from tema artwork, person from Hanbok reference, removing person from IMAGE 1, merging/splitting persons, different person, face swap, new face, hijab removal, visible hair on hijab wearer, copying model face/hair from outfit references, watermark.";
 
 function buildInacoTema5Prompt(characterId: InacoTema5CharacterId, mascotImage: number) {
   const character = INACO_TEMA_5_CHARACTERS[characterId];
-  return `For tema 5, use IMAGE ${mascotImage} as the single Inaco mascot character reference. Include exactly ONE mascot in the output—the ${character.label} from IMAGE ${mascotImage}. Reproduce this mascot's exact appearance, colors, proportions, and pose from IMAGE ${mascotImage}: ${character.pose}. Keep the mascot in vibrant illustrated 3D campaign art style. Do not squash, stretch, flatten, or distort the mascot. Do not add, duplicate, or substitute any other mascots, and do not convert the mascot into a realistic human.
+  return `For tema 5, use IMAGE ${mascotImage} as the single Inaco mascot character reference. Include exactly ONE mascot—the ${character.label} from IMAGE ${mascotImage}. Reproduce appearance, colors, proportions, and pose from IMAGE ${mascotImage}: ${character.pose}. Illustrated 3D campaign art style only. The mascot is NOT a human and does not count toward the human total.
 
-The person(s) from IMAGE 2 must remain fully photorealistic with natural skin texture, realistic lighting, and true-to-life proportions. For tema 5, repose each person standing with arms crossed over the chest and a warm smile at the camera (campaign pose). Preserve each person's exact face, facial features, skin tone, and body shape from IMAGE 2—do not alter the face or head covering.
+Repose each person from IMAGE 1 standing with arms crossed and a warm smile. Preserve exact face, hijab, skin tone, and body from IMAGE 1. Do not add, remove, merge, split, or duplicate any person from IMAGE 1. Do not copy any human from IMAGE 2 tema artwork.
 
-Compose the scene like IMAGE 1: photorealistic person(s) on the left, the single mascot from IMAGE ${mascotImage} on the right, integrated into the illustrated tema 5 background from IMAGE 1.
+Compose like IMAGE 2: person(s) from IMAGE 1 on the left, mascot from IMAGE ${mascotImage} on the right, background from IMAGE 2. Humans in output = humans in IMAGE 1 only.
 
 `;
 }
@@ -129,14 +146,14 @@ function buildInacoOutfit1HanbokPrompt(map: InacoImageMap) {
     return "";
   }
 
-  return `For outfit 1 (Hanbok), the Hanbok reference images are GARMENT REFERENCES ONLY. Extract only the Hanbok clothing design from them—do NOT copy, include, add, or composite any person, face, body, hair, or hijab from the Hanbok reference images. The Hanbok reference images may show a model with loose hair, but that model and their hair/head must NOT appear in the output. All people in the output must come exclusively from IMAGE 2.
+  return `For outfit 1 (Hanbok), IMAGE ${map.hanbokMale} and IMAGE ${map.hanbokFemale} are GARMENT-ONLY references (torso/clothing crops). Extract Hanbok fabric design, color, and pattern only. Do NOT copy any person, face, head, hair, or hijab from these images.
 
-Use IMAGE ${map.hanbokMale} as the male Hanbok clothing reference: dusty slate-blue jeogori/baeja with white collar trim, subtle floral damask pattern, cream inner sleeves, blue goreum bow, and silver filigree norigae with pale grey tassel. Ignore the male model's face and body—clothing only.
-Use IMAGE ${map.hanbokFemale} as the female Hanbok clothing reference: cream jeogori with tonal floral pattern, light pink otgoreum bow, dusty pink pleated chima with white lace floral pattern, and pink norigae tassel. Ignore the female model's face, hair, and body—clothing only. NEVER copy the female model's loose hair onto any person from IMAGE 2.
+Male Hanbok (IMAGE ${map.hanbokMale}): dusty slate-blue jeogori/baeja, white collar trim, floral damask, cream sleeves, blue goreum bow, silver norigae tassel.
+Female Hanbok (IMAGE ${map.hanbokFemale}): cream jeogori, pink otgoreum bow, dusty pink pleated chima, lace floral pattern, pink norigae tassel.
 
-For each person already present in IMAGE 2, infer apparent gender and digitally dress them in the matching Hanbok outfit from the corresponding reference image. Transfer only the Hanbok garment onto the person(s) from IMAGE 2—preserve each person's exact face, facial features, skin tone, body shape, proportions, pose, and head covering entirely from IMAGE 2. If a person in IMAGE 2 wears hijab, keep the hijab unchanged and dress the Hanbok jeogori/chima around the hijab—do not remove hijab and do not show hair.
+Dress each person from IMAGE 1 in the matching Hanbok by apparent gender. Change clothing only—face, hijab, and identity stay 100% from IMAGE 1. If IMAGE 1 shows hijab, keep hijab and fit jeogori/chima around it.
 
-CRITICAL: The total number of people in the output must exactly match IMAGE 2. Do not add extra people from the Hanbok reference images or from IMAGE 1.
+Do not add, remove, merge, split, or duplicate any person. Human count in output must exactly match IMAGE 1. Hanbok reference models must not appear as people in the output.
 
 `;
 }
@@ -161,28 +178,24 @@ function buildInacoTemaPrompt(
 
 function buildInacoOutfitPrompt(outfit: number) {
   if (outfit === 1) {
-    return "Dress only the person(s) from IMAGE 2 in the campaign Hanbok outfit described above—do not introduce any person from the Hanbok reference images.";
+    return "Dress only the person(s) from IMAGE 1 in the campaign Hanbok outfit described above—do not introduce any person from the Hanbok reference images.";
   }
 
-  return "Each person is dressed in modern casual Korean streetwear, modeled accurately according to the provided reference, with contemporary styling and natural accessorizing matching the reference image.";
+  return "Dress only the person(s) from IMAGE 1 in modern casual Korean streetwear matching the campaign aesthetic—do not add any person from reference images.";
 }
 
 function buildInacoImageInstructions(tema: number, outfit: number, imageMap: InacoImageMap) {
   const lines = [
-    `Use IMAGE 1 as the visual scene/composition/${tema === 5 ? "background" : "style"} reference (Inaco campaign tema ${tema})—do NOT copy faces or people from IMAGE 1.`,
-    "Use IMAGE 2 as the sole person identity source—copy face, head, hijab, and body identity only from IMAGE 2.",
+    "Use IMAGE 1 as the person photo to edit—preserve every face, hijab, and exact human count from IMAGE 1 exactly.",
+    `Use IMAGE 2 as the scene/background/style reference (Inaco campaign tema ${tema})—background and atmosphere only. Do NOT copy, add, or duplicate any human from IMAGE 2.`,
   ];
 
   if (imageMap.mascot) {
-    lines.push(`Use IMAGE ${imageMap.mascot} as the single Inaco mascot character reference (appearance and pose).`);
+    lines.push(`Use IMAGE ${imageMap.mascot} as the single mascot reference (appearance and pose).`);
   }
   if (imageMap.hanbokMale) {
-    lines.push(
-      `Use IMAGE ${imageMap.hanbokMale} as male Hanbok clothing reference only—ignore any person shown in this image.`,
-    );
-    lines.push(
-      `Use IMAGE ${imageMap.hanbokFemale} as female Hanbok clothing reference only—ignore any person shown in this image.`,
-    );
+    lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (no face/head).`);
+    lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (no face/head).`);
   }
 
   return `${lines.join("\n")}\n\n`;
@@ -200,18 +213,18 @@ export function buildInacoPromptV3(
   const imageInstructions = buildInacoImageInstructions(tema, outfit, imageMap);
   const renderStyle =
     tema === 5
-      ? `Hybrid composition: photorealistic commercial photo for the person(s) from IMAGE 2, combined with the single illustrated 3D Inaco mascot from IMAGE ${imageMap.mascot} on a vibrant illustrated campaign background from IMAGE 1. Keep all characters proportionally correct with no squashing or stretching. Natural lighting integration on the real person(s), sharp details.`
+      ? `Hybrid composition: photorealistic person(s) from IMAGE 1, illustrated mascot from IMAGE ${imageMap.mascot}, background from IMAGE 2. Natural lighting on real person(s), sharp details.`
       : "Photorealistic commercial photo, natural lighting integration, sharp details.";
 
   const personInstructions =
     tema === 5
-      ? `${temaPrompt}The number of people in the output must exactly match IMAGE 2—do not add, remove, merge, duplicate, or split anyone. Every face and hijab must remain exactly as in IMAGE 2.`
-      : `${temaPrompt}Place every person visible in IMAGE 2 into the visual world and mood of IMAGE 1. The number of people in the output must exactly match IMAGE 2—do not add, remove, merge, duplicate, or split anyone. Preserve each person's exact face, facial features, skin tone, body shape, proportions, pose, expression, head covering, and relative positions or grouping exactly as shown in IMAGE 2.`;
+      ? `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones. Every face and hijab unchanged from IMAGE 1. Mascot allowed (not a human).`
+      : `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones, no extras, no removals. Composite each person from IMAGE 1 into the scene and mood of IMAGE 2. Preserve exact face, facial features, skin tone, body shape, proportions, pose, expression, hijab/head covering, and relative positions or grouping exactly as shown in IMAGE 1.`;
 
-  return `${INACO_IDENTITY_LOCK_HEADER}${imageInstructions}${personInstructions}
-Dress each person in Inaco outfit style ${outfit}, matching the campaign aesthetic.
+  return `${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${imageInstructions}${personInstructions}
+Dress each person from IMAGE 1 in Inaco outfit style ${outfit}.
 
-Create a highly detailed, vibrant image featuring the same subject(s) from IMAGE 2 standing against ${landmark}. ${outfitPrompt} The scene is closely cropped from head to just above the knees, emphasizing the clothing and accessories while providing a clear view of the iconic landmark in the distance, set against the sky, atmosphere, and lighting shown in IMAGE 1. Ensure the image captures cultural authenticity, vivid colors, and a balanced composition that highlights both the subject(s) and the iconic landmark.
+Create a highly detailed, vibrant image featuring exactly the same human subject(s) from IMAGE 1—same count, no duplicates, no extra humans anywhere in frame—standing against ${landmark}. ${outfitPrompt} Crop from head to just above the knees. Background, sky, atmosphere, and lighting from IMAGE 2. Cultural authenticity, vivid colors, balanced composition.
 
 ${renderStyle}
 ${INACO_IDENTITY_LOCK_FOOTER}${INACO_FORBIDDEN_RULES}`;

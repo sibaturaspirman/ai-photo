@@ -39,7 +39,7 @@ export default function InacoFormPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [socialPlatform, setSocialPlatform] = useState<InacoSocialPlatform | null>(null);
+  const [socialPlatform, setSocialPlatform] = useState<InacoSocialPlatform>("instagram");
   const [socialUsername, setSocialUsername] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -60,7 +60,6 @@ export default function InacoFormPage() {
       name.trim().length > 0 &&
       phone.trim().length > 0 &&
       isValidIndonesianPhone(phone) &&
-      socialPlatform !== null &&
       socialUsername.trim().length > 0
     );
   }, [name, phone, socialPlatform, socialUsername]);
@@ -99,7 +98,7 @@ export default function InacoFormPage() {
 
   const handleSubmit = async () => {
     setPhoneTouched(true);
-    if (!canSubmit || !socialPlatform || isSubmitting || phoneError) return;
+    if (!canSubmit || isSubmitting || phoneError) return;
 
     const result = window.localStorage.getItem(INACO_STORAGE.result);
     if (!result) {

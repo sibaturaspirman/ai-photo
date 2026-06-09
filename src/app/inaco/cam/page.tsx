@@ -3,12 +3,14 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { fetchInacoExtraReferenceBlob } from "@/lib/inaco/prepare-reference-images";
 import {
   INACO_STORAGE,
   buildInacoExtraRefPaths,
   buildInacoPrompt,
   inacoTemaRefPath,
   pickRandomTema5CharacterId,
+  usesTema5ReferenceOrder,
   type InacoTema5CharacterId,
 } from "@/lib/inaco/constants";
 
@@ -351,16 +353,28 @@ function InacoCamPageContent() {
         selectedOutfit,
         tema5CharacterId,
       );
-      const [temaBlob, capturedBlob, ...extraBlobs] = await Promise.all([
-        fetch(temaPath).then((res) => res.blob()),
+      const [personBlob, temaBlob, ...extraBlobs] = await Promise.all([
         fetch(capture).then((res) => res.blob()),
-        ...extraRefPaths.map((path) => fetch(path).then((res) => res.blob())),
+        fetch(temaPath).then((res) => res.blob()),
+        ...extraRefPaths.map((path) => fetchInacoExtraReferenceBlob(path, selectedOutfit)),
       ]);
       const [reference1DataUrl, reference2DataUrl, ...extraDataUrls] = await Promise.all([
+        blobToDataUrl(personBlob),
         blobToDataUrl(temaBlob),
-        blobToDataUrl(capturedBlob),
         ...extraBlobs.map((blob) => blobToDataUrl(blob)),
       ]);
+
+      let apiReference1 = reference1DataUrl;
+      let apiReference2 = reference2DataUrl;
+      let apiExtraReferences = extraDataUrls;
+
+      // Tema 5: person → mascot → scene — supaya person jadi subjek utama, scene tidak timpa identitas.
+      if (usesTema5ReferenceOrder(selectedTema) && extraDataUrls.length > 0) {
+        const [mascotDataUrl, ...hanbokDataUrls] = extraDataUrls;
+        apiReference1 = reference1DataUrl;
+        apiReference2 = mascotDataUrl;
+        apiExtraReferences = [reference2DataUrl, ...hanbokDataUrls];
+      }
 
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 150000);
@@ -369,9 +383,9 @@ function InacoCamPageContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: buildInacoPrompt(selectedTema, selectedOutfit, tema5CharacterId),
-          reference1: reference1DataUrl,
-          reference2: reference2DataUrl,
-          ...(extraDataUrls.length ? { extraReferences: extraDataUrls } : {}),
+          reference1: apiReference1,
+          reference2: apiReference2,
+          ...(apiExtraReferences.length ? { extraReferences: apiExtraReferences } : {}),
         }),
         signal: controller.signal,
       });

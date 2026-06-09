@@ -37,6 +37,10 @@ body {
   background-position: center;
 }
 
+.inaco-app {
+  font-family: "Google Sans Variable", "Google Sans", "Product Sans", Arial, sans-serif;
+}
+
 .inaco-landscape-shell {
   max-width: 1080px;
   margin-inline: auto;
@@ -116,6 +120,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1vw;
+  margin-bottom: 3vw;
 }
 
 .inaco-form__label {
@@ -130,14 +135,15 @@ body {
 
 .inaco-form__input {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 2px solid #383c40;
   background: #fff;
-  padding: 1.6vw 2vw;
+  padding: 2.6vw 2vw;
   color: #111827;
   font-size: 3.5vw;
   line-height: 1.2;
   text-align: center;
   outline: none;
+  /* border-radius: 20px; */
 }
 
 .inaco-form__input::placeholder {
@@ -152,6 +158,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.2vw;
+  margin: 1vw 0;
 }
 
 .inaco-form__social-btn {
@@ -202,9 +209,9 @@ body {
 .inaco-form__submit {
   width: 100%;
   border: none;
-  background: #6b7280;
-  padding: 1.8vw 2vw;
-  color: #d1d5db;
+  background: #424242;
+  padding: 2.8vw 2vw;
+  color: #ffffff60;
   font-size: 4.2vw;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -213,10 +220,11 @@ body {
   transition:
     background-color 160ms ease,
     color 160ms ease;
+    box-shadow: 4px 4px 0 #690027;
 }
 
 .inaco-form__submit--active {
-  background: #e04585;
+  background: #E32069;
   color: #fff;
   cursor: pointer;
 }
@@ -244,7 +252,7 @@ body {
 }
 
 .inaco-form-page--keyboard-open .inaco-form {
-  transform: translateY(-32%);
+  transform: translateY(-21%);
 }
 
 @media (orientation: landscape) {
