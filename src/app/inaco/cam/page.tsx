@@ -5,8 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
   INACO_STORAGE,
+  buildInacoExtraRefPaths,
   buildInacoPrompt,
   inacoTemaRefPath,
+  pickRandomTema5CharacterId,
+  type InacoTema5CharacterId,
 } from "@/lib/inaco/constants";
 
 const PORTRAIT_W = 1080;
@@ -341,13 +344,22 @@ function InacoCamPageContent() {
     setIsGeneratingAi(true);
     try {
       const temaPath = inacoTemaRefPath(selectedTema);
-      const [temaBlob, capturedBlob] = await Promise.all([
+      const tema5CharacterId: InacoTema5CharacterId | undefined =
+        selectedTema === 5 ? pickRandomTema5CharacterId() : undefined;
+      const extraRefPaths = buildInacoExtraRefPaths(
+        selectedTema,
+        selectedOutfit,
+        tema5CharacterId,
+      );
+      const [temaBlob, capturedBlob, ...extraBlobs] = await Promise.all([
         fetch(temaPath).then((res) => res.blob()),
         fetch(capture).then((res) => res.blob()),
+        ...extraRefPaths.map((path) => fetch(path).then((res) => res.blob())),
       ]);
-      const [reference1DataUrl, reference2DataUrl] = await Promise.all([
+      const [reference1DataUrl, reference2DataUrl, ...extraDataUrls] = await Promise.all([
         blobToDataUrl(temaBlob),
         blobToDataUrl(capturedBlob),
+        ...extraBlobs.map((blob) => blobToDataUrl(blob)),
       ]);
 
       const controller = new AbortController();
@@ -356,9 +368,10 @@ function InacoCamPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: buildInacoPrompt(selectedTema, selectedOutfit),
+          prompt: buildInacoPrompt(selectedTema, selectedOutfit, tema5CharacterId),
           reference1: reference1DataUrl,
           reference2: reference2DataUrl,
+          ...(extraDataUrls.length ? { extraReferences: extraDataUrls } : {}),
         }),
         signal: controller.signal,
       });
@@ -524,7 +537,7 @@ function InacoCamPageContent() {
 
       {isGeneratingAi || DEBUG_ALWAYS_SHOW_LOADING ? (
         <div className="inaco-processing absolute inset-0 z-50 flex min-h-dvh w-full items-center justify-center overflow-hidden">
-          <div className="inaco-processing__content">
+          <div className="inaco-processing__content animate-bounce">
             <p className="inaco-processing__percent">{processingPercent}%</p>
             <div
               className="inaco-processing__bar"

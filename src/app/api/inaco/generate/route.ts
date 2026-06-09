@@ -8,6 +8,9 @@ type GenerateRequestBody = {
   prompt?: string;
   reference1?: string;
   reference2?: string;
+  /** @deprecated use extraReferences */
+  reference3?: string;
+  extraReferences?: string[];
 };
 
 type FalImage = { url: string };
@@ -61,21 +64,26 @@ export async function POST(req: Request) {
 
   try {
     const fal = getFalClient();
+    const extraRefs =
+      body.extraReferences ?? (body.reference3 ? [body.reference3] : []);
+
+    const extraBlobs = await Promise.all(extraRefs.map((ref) => dataUrlToBlob(ref)));
     const [reference1Blob, reference2Blob] = await Promise.all([
       dataUrlToBlob(body.reference1),
       dataUrlToBlob(body.reference2),
     ]);
 
-    const [reference1Url, reference2Url] = await Promise.all([
+    const referenceUrls = await Promise.all([
       fal.storage.upload(reference1Blob),
       fal.storage.upload(reference2Blob),
+      ...extraBlobs.map((blob) => fal.storage.upload(blob)),
     ]);
 
     const result = await withTimeout(
       fal.subscribe("fal-ai/nano-banana-pro/edit", {
         input: {
           prompt,
-          image_urls: [reference1Url, reference2Url],
+          image_urls: referenceUrls,
           num_images: 1,
           output_format: "png",
           aspect_ratio: "2:3",
