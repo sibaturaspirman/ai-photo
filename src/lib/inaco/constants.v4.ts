@@ -175,10 +175,10 @@ function buildInacoTema5ImageInstructions(imageMap: InacoTema5ImageMap) {
 
   if (imageMap.hanbokMale) {
     lines.push(
-      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok HEAD ACCESSORY reference (mandatory for non-hijab males in IMAGE 1)—accessory style only, not face.`,
+      `Use IMAGE ${imageMap.hanbokMaleAccessory} as male Hanbok HEAD ACCESSORY reference (mandatory for all males in IMAGE 1, including hijab wearers)—accessory style only, not face.`,
     );
     lines.push(
-      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok HEAD ACCESSORY reference (mandatory for non-hijab females in IMAGE 1)—accessory style only, not face.`,
+      `Use IMAGE ${imageMap.hanbokFemaleAccessory} as female Hanbok HEAD ACCESSORY reference (mandatory for all females in IMAGE 1, including hijab wearers)—accessory style only, not face.`,
     );
     lines.push(`Use IMAGE ${imageMap.hanbokMale} as male Hanbok garment reference only (torso/clothing crop—no face/head).`);
     lines.push(`Use IMAGE ${imageMap.hanbokFemale} as female Hanbok garment reference only (torso/clothing crop—no face/head).`);
@@ -201,11 +201,11 @@ function buildInacoPromptV4Tema5(outfit: number, tema5CharacterId?: InacoTema5Ch
   const finalCheck = outfit === 1 ? buildInacoOutfit1FinalCheck() : INACO_IDENTITY_LOCK_FOOTER;
   const outfit1Forbidden =
     outfit === 1
-      ? " FORBIDDEN for outfit 1: non-hijab person with bare/modern hair and no Hanbok head accessory."
+      ? " FORBIDDEN for outfit 1: missing Hanbok head accessory on any person; non-hijab person with bare/modern unstyled hair."
       : "";
   const headRule =
     outfit === 1
-      ? " Non-hijab wearers must have Hanbok head accessories clearly visible."
+      ? " All persons must have Hanbok head accessories (hijab wearers: hijab + accessory over it)."
       : "";
 
   return `${INACO_TEMA5_HUMAN_REQUIRED}${INACO_TEMA5_TOGETHER_POSE_LOCK}${INACO_TEMA5_MASCOT_STYLE_LOCK}${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${identityAddendum}${imageInstructions}${mascotPrompt}${hanbokPrompt}
