@@ -3,16 +3,13 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { fetchInacoExtraReferenceBlob } from "@/lib/inaco/prepare-reference-images";
 import {
-  INACO_STORAGE,
-  buildInacoExtraRefPaths,
-  buildInacoPrompt,
-  inacoTemaRefPath,
-  pickRandomTema5CharacterId,
-  usesTema5ReferenceOrder,
-  type InacoTema5CharacterId,
-} from "@/lib/inaco/constants";
+  INACO_CAM_LOADING_MS,
+  clearInacoGenerateSession,
+  isInacoGeneratePending,
+  startInacoGenerate,
+} from "@/lib/inaco/generate-session";
+import { INACO_STORAGE } from "@/lib/inaco/constants";
 
 const PORTRAIT_W = 1080;
 const PORTRAIT_H = 1920;
@@ -107,18 +104,6 @@ function captureFromPortraitPreview(sourceCanvas: HTMLCanvasElement) {
   if (!octx) return null;
   octx.drawImage(sourceCanvas, sx, sy, sww, shh, 0, 0, out.width, out.height);
   return out.toDataURL("image/jpeg", 0.92);
-}
-
-function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("Failed converting blob to data URL."));
-    };
-    reader.onerror = () => reject(new Error("Failed converting blob to data URL."));
-    reader.readAsDataURL(blob);
-  });
 }
 
 function loadImage(src: string) {
@@ -234,7 +219,10 @@ function InacoCamPageContent() {
     }
     setSelectedTema(tema);
     setSelectedOutfit(outfit);
-    window.localStorage.removeItem(INACO_STORAGE.result);
+    if (!isInacoGeneratePending()) {
+      clearInacoGenerateSession();
+      window.localStorage.removeItem(INACO_STORAGE.result);
+    }
   }, [router]);
 
   const startCamera = async () => {
@@ -278,14 +266,9 @@ function InacoCamPageContent() {
     const startTime = Date.now();
     const timer = window.setInterval(() => {
       const elapsed = Date.now() - startTime;
-      setProcessingPercent((prev) => {
-        let target = prev;
-        if (elapsed < 1600) target = Math.max(prev, 12 + Math.floor(elapsed / 45));
-        else if (elapsed < 5000) target = Math.max(prev, 48 + Math.floor((elapsed - 1600) / 120));
-        else target = Math.max(prev, 78 + Math.floor((elapsed - 5000) / 260));
-        return Math.min(target, 97);
-      });
-    }, 90);
+      const pct = Math.min(100, Math.round((elapsed / INACO_CAM_LOADING_MS) * 100));
+      setProcessingPercent(pct);
+    }, 50);
     return () => window.clearInterval(timer);
   }, [isGeneratingAi]);
 
@@ -344,72 +327,19 @@ function InacoCamPageContent() {
     setGenerateError(null);
     stopCamera();
     setIsGeneratingAi(true);
-    try {
-      const temaPath = inacoTemaRefPath(selectedTema);
-      const tema5CharacterId: InacoTema5CharacterId | undefined =
-        selectedTema === 5 ? pickRandomTema5CharacterId() : undefined;
-      const extraRefPaths = buildInacoExtraRefPaths(
-        selectedTema,
-        selectedOutfit,
-        tema5CharacterId,
-      );
-      const [personBlob, temaBlob, ...extraBlobs] = await Promise.all([
-        fetch(capture).then((res) => res.blob()),
-        fetch(temaPath).then((res) => res.blob()),
-        ...extraRefPaths.map((path) => fetchInacoExtraReferenceBlob(path, selectedOutfit)),
-      ]);
-      const [reference1DataUrl, reference2DataUrl, ...extraDataUrls] = await Promise.all([
-        blobToDataUrl(personBlob),
-        blobToDataUrl(temaBlob),
-        ...extraBlobs.map((blob) => blobToDataUrl(blob)),
-      ]);
+    setProcessingPercent(0);
 
-      let apiReference1 = reference1DataUrl;
-      let apiReference2 = reference2DataUrl;
-      let apiExtraReferences = extraDataUrls;
+    startInacoGenerate({
+      capture,
+      selectedTema,
+      selectedOutfit,
+    }).catch(() => {
+      // Error ditangani saat submit form atau jika user kembali ke halaman cam.
+    });
 
-      // Tema 5: person → mascot → scene — supaya person jadi subjek utama, scene tidak timpa identitas.
-      if (usesTema5ReferenceOrder(selectedTema) && extraDataUrls.length > 0) {
-        const [mascotDataUrl, ...hanbokDataUrls] = extraDataUrls;
-        apiReference1 = reference1DataUrl;
-        apiReference2 = mascotDataUrl;
-        apiExtraReferences = [reference2DataUrl, ...hanbokDataUrls];
-      }
-
-      const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 150000);
-      const response = await fetch("/api/inaco/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: buildInacoPrompt(selectedTema, selectedOutfit, tema5CharacterId),
-          reference1: apiReference1,
-          reference2: apiReference2,
-          ...(apiExtraReferences.length ? { extraReferences: apiExtraReferences } : {}),
-        }),
-        signal: controller.signal,
-      });
-      window.clearTimeout(timeoutId);
-
-      const data = (await response.json()) as { imageUrl?: string; error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Failed to generate image.");
-      if (!data.imageUrl) throw new Error("API response does not include generated image.");
-
-      window.localStorage.setItem(INACO_STORAGE.result, data.imageUrl);
-      setProcessingPercent(100);
-      router.push("/inaco/form");
-    } catch (error) {
-      const message =
-        error instanceof Error && error.name === "AbortError"
-          ? "Proses AI timeout. Coba lagi ya."
-          : error instanceof Error
-            ? error.message
-            : "Gagal memproses foto dengan AI.";
-      setGenerateError(message);
-      await startCamera();
-      setIsGeneratingAi(false);
-      setProcessingPercent(0);
-    }
+    await new Promise((resolve) => window.setTimeout(resolve, INACO_CAM_LOADING_MS));
+    setProcessingPercent(100);
+    router.push("/inaco/form");
   };
 
   return (

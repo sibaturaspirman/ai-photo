@@ -7,9 +7,11 @@ import {
   INACO_STORAGE,
   type InacoSocialPlatform,
   getIndonesianPhoneError,
+  hasInacoGenerateAccess,
   isValidIndonesianPhone,
   saveInacoSubmissionData,
   saveInacoUserData,
+  waitForInacoGenerateResult,
 } from "@/lib/inaco/constants";
 
 type ActiveField = "name" | "phone" | "username" | null;
@@ -47,7 +49,7 @@ export default function InacoFormPage() {
   const [phoneTouched, setPhoneTouched] = useState(false);
 
   useEffect(() => {
-    if (!window.localStorage.getItem(INACO_STORAGE.result)) {
+    if (!hasInacoGenerateAccess()) {
       router.replace("/inaco/cam");
     }
   }, [router]);
@@ -99,9 +101,7 @@ export default function InacoFormPage() {
   const handleSubmit = async () => {
     setPhoneTouched(true);
     if (!canSubmit || isSubmitting || phoneError) return;
-
-    const result = window.localStorage.getItem(INACO_STORAGE.result);
-    if (!result) {
+    if (!hasInacoGenerateAccess()) {
       router.replace("/inaco/cam");
       return;
     }
@@ -111,6 +111,11 @@ export default function InacoFormPage() {
     setActiveField(null);
 
     try {
+      let result = window.localStorage.getItem(INACO_STORAGE.result);
+      if (!result) {
+        result = await waitForInacoGenerateResult();
+      }
+
       const response = await fetch("/api/inaco/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -255,7 +260,7 @@ export default function InacoFormPage() {
           onFocus={() => closeKeyboard()}
           className={`inaco-form__submit ${canSubmit && !isSubmitting ? "inaco-form__submit--active" : ""}`}
         >
-          {isSubmitting ? "Submitting..." : "Submit"}
+          {isSubmitting ? "Submitting & Generating..." : "Submit"}
         </button>
       </form>
 

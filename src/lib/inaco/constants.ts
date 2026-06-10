@@ -25,3 +25,12 @@ export function buildInacoPrompt(
 ) {
   return buildInacoPromptV4(tema, outfit, tema5CharacterId);
 }
+
+export {
+  clearInacoGenerateSession,
+  hasInacoGenerateAccess,
+  isInacoGeneratePending,
+  startInacoGenerate,
+  waitForInacoGenerateResult,
+  INACO_CAM_LOADING_MS,
+} from "./generate-session";
