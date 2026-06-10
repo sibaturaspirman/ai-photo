@@ -258,7 +258,7 @@ export default function InacoFormPage() {
           type="submit"
           disabled={!canSubmit || isSubmitting}
           onFocus={() => closeKeyboard()}
-          className={`inaco-form__submit ${canSubmit && !isSubmitting ? "inaco-form__submit--active" : ""}`}
+          className={`inaco-form__submit  ${canSubmit && !isSubmitting ? "inaco-form__submit--active" : ""} ${isSubmitting ? "animate-bounce" : ""}`}
         >
           {isSubmitting ? "Submitting & Generating..." : "Submit"}
         </button>
