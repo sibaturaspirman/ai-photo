@@ -263,7 +263,7 @@ export default function InacoFormPage() {
           {isSubmitting ? "Submitting & Generating..." : "Submit"}
         </button>
 
-        <p className={`text-center text-[4.6vw] font-semibold text-blue text-[#b02e5d] ${isSubmitting ? "animate-bounce" : "hidden"}`}>Please wait...</p>
+        <p className={`text-center text-[4.6vw] font-semibold text-blue text-[#b02e5d] leading-[1.3] ${isSubmitting ? "animate-bounce" : "hidden"}`}>Please wait.... <span className="block text-[3.8vw] italic">(takes 10-60s)</span></p>
       </form>
 
       {activeField && !isSubmitting ? (
