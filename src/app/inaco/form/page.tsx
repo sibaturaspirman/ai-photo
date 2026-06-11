@@ -262,6 +262,8 @@ export default function InacoFormPage() {
         >
           {isSubmitting ? "Submitting & Generating..." : "Submit"}
         </button>
+
+        <p className={`text-center text-[4.6vw] font-semibold text-blue text-[#b02e5d] ${isSubmitting ? "animate-bounce" : "hidden"}`}>Please wait...</p>
       </form>
 
       {activeField && !isSubmitting ? (
