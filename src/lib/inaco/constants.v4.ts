@@ -1,6 +1,7 @@
 /** Prompt v4 — tema 5 only. Tema 1–4 delegate to frozen v3 (jangan disentuh). */
 
 import {
+  INACO_FACE_LOCK,
   INACO_OUTFIT_1_HANBOK_REFS,
   INACO_OUTFIT_1_IDENTITY_ADDENDUM,
   INACO_TEMA_5_CHARACTERS,
@@ -84,7 +85,7 @@ Do NOT convert the person from IMAGE 1 into illustration/cartoon style—they mu
 
 `;
 
-const INACO_EDIT_TASK = `TASK: Edit IMAGE 1 in place. IMAGE 1 is the captured photo—the ONLY source of human subjects and human identity. The photorealistic person(s) in IMAGE 1 MUST appear in the output—this is non-negotiable. Count every human in IMAGE 1: the output must contain EXACTLY that many photorealistic humans, each appearing exactly once. Do not replace, swap, duplicate, clone, or omit them. Do not copy any human from IMAGE 3 (scene artwork) or other references.
+const INACO_EDIT_TASK = `TASK: Edit IMAGE 1 in place. IMAGE 1 is the captured photo—the ONLY source of human subjects, human identity, and human faces. The photorealistic person(s) in IMAGE 1 MUST appear in the output—this is non-negotiable. Count every human in IMAGE 1: the output must contain EXACTLY that many photorealistic humans, each appearing exactly once, each with the EXACT SAME FACE as IMAGE 1. Facial identity is IMMUTABLE. Do not replace, swap, duplicate, clone, beautify, or omit them. Do not copy any human face from IMAGE 3 (scene artwork) or other references.
 
 `;
 
@@ -101,10 +102,11 @@ const INACO_PERSON_COUNT_LOCK = `=== PERSON COUNT LOCK (STRICT — SAME AS IMAGE
 `;
 
 const INACO_IDENTITY_LOCK_HEADER = `=== IDENTITY LOCK (HIGHEST PRIORITY) ===
-- IMAGE 1 = person photo—primary subject, photorealistic, must appear in output.
+- IMAGE 1 = person photo—primary subject, photorealistic, must appear in output. Face copied ONLY from IMAGE 1—locked, unchanged, same person.
 - IMAGE 2 = mascot reference only (illustrated, not human).
 - IMAGE 3 = scene/background/layout from tema 5 artwork—background only, no people from IMAGE 3.
-- FACE & HIJAB: copy only from IMAGE 1—unchanged, recognizable, hijab preserved if present.
+- FACE: identical to IMAGE 1—100% recognizable, zero face change, not beautified, not swapped. Treat face as a locked layer from IMAGE 1.
+- HIJAB: copy only from IMAGE 1—unchanged, hijab preserved if present.
 === END IDENTITY LOCK ===
 
 `;
@@ -112,7 +114,8 @@ const INACO_IDENTITY_LOCK_HEADER = `=== IDENTITY LOCK (HIGHEST PRIORITY) ===
 const INACO_IDENTITY_LOCK_FOOTER = `=== FINAL CHECK ===
 1) Photorealistic person(s) from IMAGE 1 clearly visible, posing together with mascot.
 2) Human count = IMAGE 1 count. Person and mascot close like foto bareng. Mascot in same 3D illustrated style as IMAGE 2—not flat 2D. Background from IMAGE 3.
-3) Same face, hijab, identity as IMAGE 1. Not illustration-only output.
+3) FACE CHECK: every face identical to IMAGE 1—same person, no face change, no swap. Not illustration-only output.
+4) Same hijab/head identity as IMAGE 1.
 === END FINAL CHECK ===
 
 `;
@@ -126,7 +129,7 @@ const INACO_TEMA_5_TOGETHER_POSE: Record<InacoTema5CharacterId, string> = {
 const INACO_TEMA5_TOGETHER_POSE_LOCK = `=== TOGETHER PHOTO POSE (TEMA 5) ===
 - Compose like a friendly photo together (foto bareng)—person from IMAGE 1 and mascot from IMAGE 2 in the same frame, close to each other, not far apart.
 - Both face the camera with a warm, cheerful campaign energy—as if posing for a picture at an event.
-- Allow natural interactive posing between person and mascot (leaning in, side-by-side closeness, playful gesture)—but preserve the person's face, hijab, and identity from IMAGE 1, and the mascot's 3D design from IMAGE 2.
+- Allow natural interactive posing between person and mascot (leaning in, side-by-side closeness, playful gesture)—but preserve the person's EXACT face from IMAGE 1 (face must not change), hijab, and identity. Only body pose may adjust. Keep mascot's 3D design from IMAGE 2.
 - Do NOT leave the person and mascot standing stiffly far apart on opposite sides with no interaction.
 === END TOGETHER PHOTO POSE ===
 
@@ -142,7 +145,7 @@ const INACO_TEMA5_MASCOT_STYLE_LOCK = `=== MASCOT STYLE LOCK (STRICT — MATCH I
 `;
 
 const INACO_FORBIDDEN_RULES =
-  "FORBIDDEN: mascot-only output, missing person from IMAGE 1, person converted to illustration, mascot converted to flat 2D style, mascot redesign away from IMAGE 2 reference, extra people, duplicate person, person from IMAGE 3 artwork, person from Hanbok reference, face swap, hijab removal, watermark.";
+  "FORBIDDEN: face change, face swap, new face, different person, beautified face, copying face from references, mascot-only output, missing person from IMAGE 1, person converted to illustration, mascot converted to flat 2D style, mascot redesign away from IMAGE 2 reference, extra people, duplicate person, person from IMAGE 3 artwork, person from Hanbok reference, hijab removal, watermark.";
 
 function buildInacoTema5MascotPrompt(characterId: InacoTema5CharacterId, imageMap: InacoTema5ImageMap) {
   const character = INACO_TEMA_5_CHARACTERS[characterId];
@@ -151,7 +154,7 @@ function buildInacoTema5MascotPrompt(characterId: InacoTema5CharacterId, imageMa
 
 Use IMAGE ${imageMap.scene} as the illustrated background and composition layout reference (tema 5 Hanok village scene). Extract background, sky, atmosphere, and layout only. Do NOT copy any illustrated human or mascot from IMAGE ${imageMap.scene}—those are replaced by the real person from IMAGE 1 and the mascot from IMAGE ${imageMap.mascot}.
 
-TOGETHER PHOTO: ${togetherPose} Preserve exact face, hijab, skin tone, and body identity from IMAGE 1—only adjust pose for natural interaction with the mascot.
+TOGETHER PHOTO: ${togetherPose} Preserve EXACT face from IMAGE 1—face must not change. Only adjust body pose for natural interaction with the mascot. Keep hijab, skin tone, and body identity from IMAGE 1.
 
 Layout: photorealistic person(s) from IMAGE 1 and mascot from IMAGE ${imageMap.mascot} grouped close together in the center-left to center frame like a foto bareng, background atmosphere from IMAGE ${imageMap.scene}.
 
@@ -168,7 +171,7 @@ function buildInacoTema5OutfitPrompt(outfit: number) {
 
 function buildInacoTema5ImageInstructions(imageMap: InacoTema5ImageMap) {
   const lines = [
-    "Use IMAGE 1 as the person photo—the mandatory primary photorealistic subject. Must appear in the output.",
+    "Use IMAGE 1 as the person photo—the mandatory primary photorealistic subject. Must appear in the output. Face must be identical to IMAGE 1—unchanged.",
     `Use IMAGE ${imageMap.mascot} as the single mascot reference—copy exact 3D illustrated appearance, colors, and pose from this image. Do not convert to flat 2D style.`,
     `Use IMAGE ${imageMap.scene} as the tema 5 scene/background/layout reference—background and atmosphere only, ignore illustrated characters in this image.`,
   ];
@@ -195,7 +198,7 @@ function buildInacoPromptV4Tema5(outfit: number, tema5CharacterId?: InacoTema5Ch
   const outfitPrompt = buildInacoTema5OutfitPrompt(outfit);
   const imageInstructions = buildInacoTema5ImageInstructions(imageMap);
 
-  const renderStyle = `Hybrid composition: photorealistic person(s) from IMAGE 1 and 3D illustrated mascot from IMAGE ${imageMap.mascot} posing close together like a foto bareng (friendly interactive buddy photo—not far apart). Mascot faithful to IMAGE ${imageMap.mascot} reference in 3D CGI style—not flat 2D. Illustrated background from IMAGE ${imageMap.scene}. Person stays photorealistic with natural lighting and sharp facial detail.`;
+  const renderStyle = `Hybrid composition: photorealistic person(s) from IMAGE 1 (face locked identical to IMAGE 1) and 3D illustrated mascot from IMAGE ${imageMap.mascot} posing close together like a foto bareng (friendly interactive buddy photo—not far apart). Mascot faithful to IMAGE ${imageMap.mascot} reference in 3D CGI style—not flat 2D. Illustrated background from IMAGE ${imageMap.scene}. Person stays photorealistic with natural lighting and sharp facial detail matching IMAGE 1 exactly.`;
 
   const identityAddendum = outfit === 1 ? INACO_OUTFIT_1_IDENTITY_ADDENDUM : "";
   const finalCheck = outfit === 1 ? buildInacoOutfit1FinalCheck() : INACO_IDENTITY_LOCK_FOOTER;
@@ -208,7 +211,7 @@ function buildInacoPromptV4Tema5(outfit: number, tema5CharacterId?: InacoTema5Ch
       ? " All persons must have Hanbok head accessories (hijab wearers: hijab + accessory over it)."
       : "";
 
-  return `${INACO_TEMA5_HUMAN_REQUIRED}${INACO_TEMA5_TOGETHER_POSE_LOCK}${INACO_TEMA5_MASCOT_STYLE_LOCK}${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${identityAddendum}${imageInstructions}${mascotPrompt}${hanbokPrompt}
+  return `${INACO_TEMA5_HUMAN_REQUIRED}${INACO_TEMA5_TOGETHER_POSE_LOCK}${INACO_TEMA5_MASCOT_STYLE_LOCK}${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${INACO_FACE_LOCK}${identityAddendum}${imageInstructions}${mascotPrompt}${hanbokPrompt}
 HUMAN COUNT LOCK: photorealistic humans in output = humans in IMAGE 1 exactly. Person from IMAGE 1 must be visible—not optional.${headRule}
 
 Dress each person from IMAGE 1 in Inaco outfit style ${outfit}.

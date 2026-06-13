@@ -106,7 +106,18 @@ const INACO_TEMA_LANDMARKS: Record<number, string> = {
   5: "a picturesque Hanok village street with Namsan Tower (N Seoul Tower) in the distance and cherry blossom season atmosphere",
 };
 
-const INACO_EDIT_TASK = `TASK: Edit IMAGE 1 in place. IMAGE 1 is the captured photo—the ONLY source of human subjects and human identity. Count every human in IMAGE 1: the output must contain EXACTLY that many humans, each appearing exactly once. Every person visible in IMAGE 1 must appear in the output with the exact same face, facial features, skin tone, expression, and head covering (hijab if present). Do not replace, swap, duplicate, clone, or invent faces or people. Do not copy any human face, body, or head from IMAGE 2 or from any later reference images.
+const INACO_EDIT_TASK = `TASK: Edit IMAGE 1 in place. IMAGE 1 is the captured photo—the ONLY source of human subjects, human identity, and human faces. Count every human in IMAGE 1: the output must contain EXACTLY that many humans, each appearing exactly once. Every person visible in IMAGE 1 must appear in the output with the EXACT SAME FACE and facial identity—same face shape, eyes, nose, lips, skin tone, expression, and head covering (hijab if present). Facial identity is IMMUTABLE. Do not replace, swap, duplicate, clone, beautify, or invent faces or people. Do not copy any human face, body, or head from IMAGE 2 or from any later reference images.
+
+`;
+
+export const INACO_FACE_LOCK = `=== FACE LOCK (ABSOLUTE — HIGHEST PRIORITY) ===
+- The face in the output MUST be the SAME PERSON as in IMAGE 1—immediately recognizable, identical individual.
+- Preserve EXACTLY from IMAGE 1 for every person: face shape, jawline, cheekbones, forehead, nose shape/size, eye shape/color/spacing, eyebrows, eyelids, lips, mouth, ears, chin, skin tone, complexion, moles/freckles, age appearance, and natural facial expression.
+- ONLY IMAGE 1 is the face source. Never copy, blend, or borrow any facial feature from IMAGE 2, scene artwork, Hanbok references, accessory references, or mascot artwork.
+- ALLOWED changes on the person: clothing/outfit, background, body pose, Hanbok head accessories—NEVER alter facial features or identity.
+- FORBIDDEN: face swap, new face, different person, modeled/stock face, AI beautification, face slimming, making younger/older, changing ethnicity, smoothing that changes identity, copying model face from outfit/accessory references.
+- If any instruction conflicts with keeping the face identical to IMAGE 1, KEEP THE FACE FROM IMAGE 1.
+=== END FACE LOCK ===
 
 `;
 
@@ -126,7 +137,7 @@ const INACO_PERSON_COUNT_LOCK = `=== PERSON COUNT LOCK (STRICT — SAME AS IMAGE
 const INACO_IDENTITY_LOCK_HEADER = `=== IDENTITY LOCK (HIGHEST PRIORITY) ===
 - IMAGE 1 = person photo to preserve and edit. Copy faces, bodies, and hijab ONLY from IMAGE 1.
 - IMAGE 2 = scene/background/style only. Never copy people, faces, bodies, or hair from IMAGE 2.
-- FACE: Each output face must be the same person as in IMAGE 1—recognizable, unchanged, not beautified, not swapped.
+- FACE: Each output face must be the SAME PERSON as in IMAGE 1—100% recognizable, zero face change, not beautified, not swapped, not a look-alike. Treat the face as a locked layer copied from IMAGE 1.
 - HIJAB: If IMAGE 1 shows hijab/headscarf, keep hijab in the output with identical coverage, color, and wrap. No visible hair. Never remove hijab. Never replace hijab with loose hair or a reference-model hairstyle.
 === END IDENTITY LOCK ===
 
@@ -135,14 +146,15 @@ const INACO_IDENTITY_LOCK_HEADER = `=== IDENTITY LOCK (HIGHEST PRIORITY) ===
 const INACO_IDENTITY_LOCK_FOOTER = `=== FINAL CHECK ===
 1) Human count in output = human count in IMAGE 1 (exact match).
 2) Each IMAGE 1 person appears exactly once—no duplicates.
-3) Same face, same hijab/head, same identity as IMAGE 1.
-4) No extra humans from scene, Hanbok, or reference images.
+3) FACE CHECK: every face is identical to IMAGE 1—same person, no face change, no swap.
+4) Same hijab/head identity as IMAGE 1 (accessories allowed per outfit rules).
+5) No extra humans from scene, Hanbok, or reference images.
 === END FINAL CHECK ===
 
 `;
 
 const INACO_FORBIDDEN_RULES =
-  "FORBIDDEN: extra people, duplicate person, cloned face, mirrored copy, crowd/bystander, person from IMAGE 2, person from tema artwork, person from Hanbok reference, removing person from IMAGE 1, merging/splitting persons, different person, face swap, new face, hijab removal, visible hair on hijab wearer, copying model face/hair from outfit references, watermark.";
+  "FORBIDDEN: face change, face swap, new face, different person, look-alike face, beautified face, AI-smoothed face that alters identity, copying face from references, extra people, duplicate person, cloned face, mirrored copy, crowd/bystander, person from IMAGE 2, person from tema artwork, person from Hanbok reference, removing person from IMAGE 1, merging/splitting persons, hijab removal, visible hair on hijab wearer, copying model face/hair from outfit references, watermark.";
 
 function buildInacoTema5Prompt(characterId: InacoTema5CharacterId, mascotImage: number) {
   const character = INACO_TEMA_5_CHARACTERS[characterId];
@@ -191,14 +203,14 @@ Do not add, remove, merge, split, or duplicate any person. Human count in output
 `;
 }
 
-export const INACO_OUTFIT_1_IDENTITY_ADDENDUM = `OUTFIT 1 HEAD RULE: Face/identity always from IMAGE 1. Every person MUST wear Hanbok head accessory matching gender (mandatory). Hijab wearers: keep hijab unchanged AND add accessory over/on hijab. Non-hijab wearers: add accessory on head—no bare/modern unstyled hair.
+export const INACO_OUTFIT_1_IDENTITY_ADDENDUM = `OUTFIT 1 HEAD RULE: Face/identity always from IMAGE 1—face must NOT change. Every person MUST wear Hanbok head accessory matching gender (mandatory). Hijab wearers: keep hijab unchanged AND add accessory over/on hijab. Non-hijab wearers: add accessory on head—no bare/modern unstyled hair. Accessories only—never copy reference model faces.
 
 `;
 
 export function buildInacoOutfit1FinalCheck() {
   return `=== FINAL CHECK (OUTFIT 1) ===
 1) Human count in output = human count in IMAGE 1 (exact match).
-2) Same face and identity from IMAGE 1 for every person.
+2) FACE CHECK: same face and identity from IMAGE 1 for every person—no face change, no swap.
 3) Every person: Hanbok head accessory clearly visible (male or female style per apparent gender)—mandatory.
 4) Hijab wearers: hijab unchanged from IMAGE 1, accessory worn over/on hijab.
 5) Non-hijab wearers: accessory on head, no bare/modern unstyled hair.
@@ -236,7 +248,7 @@ function buildInacoOutfitPrompt(outfit: number) {
 
 function buildInacoImageInstructions(tema: number, outfit: number, imageMap: InacoImageMap) {
   const lines = [
-    "Use IMAGE 1 as the person photo to edit—preserve every face, hijab, and exact human count from IMAGE 1 exactly.",
+    "Use IMAGE 1 as the person photo to edit—preserve every face (identical, unchanged), hijab, and exact human count from IMAGE 1 exactly.",
     `Use IMAGE 2 as the scene/background/style reference (Inaco campaign tema ${tema})—background and atmosphere only. Do NOT copy, add, or duplicate any human from IMAGE 2.`,
   ];
 
@@ -284,7 +296,7 @@ export function buildInacoPromptV3(
       ? `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones. Every face unchanged from IMAGE 1.${outfit === 1 ? " All persons must have Hanbok head accessories (hijab + accessory or accessory alone)." : " Every face and hijab unchanged from IMAGE 1."} Mascot allowed (not a human).`
       : `${temaPrompt}HUMAN COUNT LOCK: humans in output = humans in IMAGE 1 exactly. Each IMAGE 1 person once only—no duplicates, no clones, no extras, no removals. Composite each person from IMAGE 1 into the scene and mood of IMAGE 2. Preserve exact face, facial features, skin tone, body shape, proportions, pose, expression, and relative positions or grouping exactly as shown in IMAGE 1.${outfit === 1 ? " Head rule: every person gets Hanbok head accessory; hijab wearers keep hijab and add accessory over it." : " Preserve hijab/head covering exactly as shown in IMAGE 1."}`;
 
-  return `${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${identityAddendum}${imageInstructions}${personInstructions}
+  return `${INACO_EDIT_TASK}${INACO_PERSON_COUNT_LOCK}${INACO_IDENTITY_LOCK_HEADER}${INACO_FACE_LOCK}${identityAddendum}${imageInstructions}${personInstructions}
 Dress each person from IMAGE 1 in Inaco outfit style ${outfit}.
 
 Create a highly detailed, vibrant image featuring exactly the same human subject(s) from IMAGE 1—same count, no duplicates, no extra humans anywhere in frame—standing against ${landmark}. ${outfitPrompt} Crop from head to just above the knees. Background, sky, atmosphere, and lighting from IMAGE 2. Cultural authenticity, vivid colors, balanced composition.
