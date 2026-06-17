@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { fetchGrvty, getGrvtyFetchErrorMessage } from "@/lib/grvty/fetch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const GRVTY_SUBMIT_URL = "https://grvty.id/v1/submissions/submit";
 
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const response = await fetch(GRVTY_SUBMIT_URL, {
+    const response = await fetchGrvty(GRVTY_SUBMIT_URL, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -79,8 +81,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal submit data ke server.";
+    const message = getGrvtyFetchErrorMessage(error);
     console.error("[inaco] submit error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }
