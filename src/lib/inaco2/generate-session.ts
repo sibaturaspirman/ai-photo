@@ -1,5 +1,5 @@
 import { FAL_GENERATE_CLIENT_TIMEOUT_MS } from "@/lib/fal/constants";
-import { fetchInacoExtraReferenceBlob } from "@/lib/inaco/prepare-reference-images";
+import { fetchInacoExtraReferenceBlob } from "./prepare-reference-images";
 import {
   INACO_STORAGE,
   buildInacoExtraRefPaths,
@@ -8,9 +8,9 @@ import {
   pickRandomTema5CharacterId,
   usesTema5ReferenceOrder,
   type InacoTema5CharacterId,
-} from "@/lib/inaco/constants";
+} from "./constants";
 
-const GENERATE_PENDING_KEY = "inaco-generate-pending";
+const GENERATE_PENDING_KEY = "inaco2-generate-pending";
 const GENERATE_TIMEOUT_MS = FAL_GENERATE_CLIENT_TIMEOUT_MS;
 
 export const INACO_CAM_LOADING_MS = 2000;
@@ -79,7 +79,7 @@ async function runInacoGenerate(
   const timeoutId = window.setTimeout(() => abortController.abort(), GENERATE_TIMEOUT_MS);
 
   try {
-    const response = await fetch("/api/inaco/generate", {
+    const response = await fetch("/api/inaco2/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

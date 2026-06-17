@@ -5,6 +5,12 @@
     },
     "src/app/api/inaco/generate/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/inaco2/submit/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/inaco2/generate/route.ts": {
+      "maxDuration": 300
     }
   }
 }

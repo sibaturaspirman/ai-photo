@@ -19,3 +19,8 @@ export function getFalClient() {
 
 export const DEFAULT_FAL_MODEL =
   process.env.FAL_MODEL ?? "fal-ai/flux/schnell";
+
+export {
+  FAL_GENERATE_CLIENT_TIMEOUT_MS,
+  FAL_GENERATE_TIMEOUT_MS,
+} from "./fal/constants";
