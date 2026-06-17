@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/app/api/inaco/submit/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/inaco/generate/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}

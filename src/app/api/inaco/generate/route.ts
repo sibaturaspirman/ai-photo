@@ -3,6 +3,7 @@ import { getFalClient } from "@/lib/fal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 type GenerateRequestBody = {
   prompt?: string;

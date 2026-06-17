@@ -1,8 +1,10 @@
 import https from "node:https";
 import { URL } from "node:url";
 
-const GRVTY_REQUEST_TIMEOUT_MS = 60_000;
-const GRVTY_MAX_RETRIES = 3;
+/** Sisakan ~1s untuk parsing request/response di dalam function Vercel Hobby (10s). */
+const VERCEL_SAFE_BUDGET_MS = 9_000;
+const DEFAULT_BUDGET_MS = 55_000;
+const GRVTY_MAX_RETRIES = 2;
 
 type GrvtyResponse = {
   ok: boolean;
@@ -14,20 +16,28 @@ type GrvtyRequestInit = {
   method: string;
   headers: Record<string, string>;
   body: string;
+  timeoutMs: number;
 };
 
-function isRetryableError(error: unknown) {
-  if (!(error instanceof Error)) return false;
-  return (
-    error.message.includes("timeout") ||
-    error.message.includes("ECONNRESET") ||
-    error.message.includes("ETIMEDOUT") ||
-    error.message.includes("ECONNREFUSED")
-  );
+function getGrvtyBudgetMs() {
+  const fromEnv = Number(process.env.GRVTY_FETCH_BUDGET_MS);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return fromEnv;
+  return process.env.VERCEL ? VERCEL_SAFE_BUDGET_MS : DEFAULT_BUDGET_MS;
 }
 
-function retryDelayMs(attempt: number) {
-  return 1000 * attempt;
+function isFastRetryableError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  const code = (error as Error & { code?: string }).code;
+  return code === "ECONNRESET" || code === "ECONNREFUSED" || code === "EPIPE";
+}
+
+function isTimeoutError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return error.message.includes("timeout") || error.message.includes("ETIMEDOUT");
+}
+
+function retryDelayMs() {
+  return 400;
 }
 
 function requestOnce(url: string, init: GrvtyRequestInit): Promise<GrvtyResponse> {
@@ -45,7 +55,7 @@ function requestOnce(url: string, init: GrvtyRequestInit): Promise<GrvtyResponse
           ...init.headers,
           "content-length": bodyBuffer.byteLength.toString(),
         },
-        timeout: GRVTY_REQUEST_TIMEOUT_MS,
+        timeout: init.timeoutMs,
         family: 4,
       },
       (res) => {
@@ -71,7 +81,7 @@ function requestOnce(url: string, init: GrvtyRequestInit): Promise<GrvtyResponse
     );
 
     req.on("timeout", () => {
-      req.destroy(new Error("Connect timeout ke server GRVTY"));
+      req.destroy(new Error("Timeout ke server GRVTY"));
     });
     req.on("error", reject);
     req.write(bodyBuffer);
@@ -93,20 +103,30 @@ export async function fetchGrvty(url: string, init: RequestInit): Promise<GrvtyR
     }
   }
 
+  const deadline = Date.now() + getGrvtyBudgetMs();
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= GRVTY_MAX_RETRIES; attempt++) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 500) break;
+
     try {
       return await requestOnce(url, {
         method: init.method ?? "GET",
         headers,
         body,
+        timeoutMs: remaining,
       });
     } catch (error) {
       lastError = error;
-      const canRetry = attempt < GRVTY_MAX_RETRIES && isRetryableError(error);
+      const canRetry =
+        attempt < GRVTY_MAX_RETRIES &&
+        isFastRetryableError(error) &&
+        !isTimeoutError(error) &&
+        deadline - Date.now() > 1000;
+
       if (!canRetry) break;
-      await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt)));
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs()));
     }
   }
 
@@ -114,7 +134,7 @@ export async function fetchGrvty(url: string, init: RequestInit): Promise<GrvtyR
 }
 
 export function getGrvtyFetchErrorMessage(error: unknown) {
-  if (isRetryableError(error)) {
+  if (isTimeoutError(error)) {
     return "Gagal terhubung ke server GRVTY (timeout). Silakan coba submit lagi.";
   }
   if (error instanceof Error) return error.message;
