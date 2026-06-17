@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { INACO_OUTFIT_COUNT, INACO_STORAGE, clearInacoUserData, inacoOutfitPath } from "@/lib/inaco/constants";
+import { inacoPath } from "@/lib/inaco/model-version";
 
 const CHECK_COLOR = "#E31837";
 
@@ -34,7 +35,7 @@ export default function InacoStylePage() {
 
   useEffect(() => {
     if (!window.localStorage.getItem(INACO_STORAGE.tema)) {
-      router.replace("/inaco/template");
+      router.replace(inacoPath("/inaco/template"));
     }
     window.localStorage.removeItem(INACO_STORAGE.outfit);
     window.localStorage.removeItem(INACO_STORAGE.result);
@@ -47,7 +48,7 @@ export default function InacoStylePage() {
   };
 
   const goToCam = () => {
-    router.push("/inaco/cam");
+    router.push(inacoPath("/inaco/cam"));
   };
 
   return (

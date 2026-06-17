@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { FAL_GENERATE_TIMEOUT_MS, getFalClient } from "@/lib/fal";
+import {
+  INACO_V2_QUERY,
+  buildInacoFalEditInput,
+  resolveInacoFalModel,
+} from "@/lib/inaco/model-version";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,6 +70,8 @@ export async function POST(req: Request) {
 
   try {
     const fal = getFalClient();
+    const useV2 = new URL(req.url).searchParams.has(INACO_V2_QUERY);
+    const falModel = resolveInacoFalModel(useV2);
     const extraRefs =
       body.extraReferences ?? (body.reference3 ? [body.reference3] : []);
 
@@ -81,15 +88,8 @@ export async function POST(req: Request) {
     ]);
 
     const result = await withTimeout(
-      fal.subscribe("fal-ai/nano-banana-pro/edit", {
-        input: {
-          prompt,
-          image_urls: referenceUrls,
-          num_images: 1,
-          output_format: "png",
-          aspect_ratio: "2:3",
-          safety_tolerance: "2",
-        },
+      fal.subscribe(falModel, {
+        input: buildInacoFalEditInput(useV2, prompt, referenceUrls),
         logs: false,
         timeout: FAL_GENERATE_TIMEOUT_MS,
       }),
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      model: "fal-ai/nano-banana-pro/edit",
+      model: falModel,
       imageUrl,
       requestId: result.requestId,
     });

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { INACO_STORAGE, inacoTemaThumbPath } from "@/lib/inaco/constants";
+import { inacoPath } from "@/lib/inaco/model-version";
 
 const CHECK_COLOR = "#E31837";
 
@@ -112,7 +113,7 @@ export default function InacoTemplatePage() {
           aria-disabled={!selectedTema}
           onClick={() => {
             if (!selectedTema) return;
-            router.push("/inaco/style");
+            router.push(inacoPath("/inaco/style"));
           }}
           className={`mx-auto mt-10 block w-[80%] ${!selectedTema ? "pointer-events-none opacity-60" : ""}`}
         >

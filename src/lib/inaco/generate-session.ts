@@ -1,6 +1,11 @@
 import { FAL_GENERATE_CLIENT_TIMEOUT_MS } from "@/lib/fal/constants";
 import { fetchInacoExtraReferenceBlob } from "@/lib/inaco/prepare-reference-images";
 import {
+  INACO_V2_QUERY,
+  appendInacoV2PromptAddendum,
+  isInacoV2GenerateEnabled,
+} from "@/lib/inaco/model-version";
+import {
   INACO_STORAGE,
   buildInacoExtraRefPaths,
   buildInacoPrompt,
@@ -78,12 +83,19 @@ async function runInacoGenerate(
 
   const timeoutId = window.setTimeout(() => abortController.abort(), GENERATE_TIMEOUT_MS);
 
+  const useV2 = isInacoV2GenerateEnabled();
+  const basePrompt = buildInacoPrompt(selectedTema, selectedOutfit, tema5CharacterId);
+  const prompt = useV2 ? appendInacoV2PromptAddendum(basePrompt) : basePrompt;
+
   try {
-    const response = await fetch("/api/inaco/generate", {
+    const generateUrl = useV2
+      ? `/api/inaco/generate?${INACO_V2_QUERY}`
+      : "/api/inaco/generate";
+    const response = await fetch(generateUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: buildInacoPrompt(selectedTema, selectedOutfit, tema5CharacterId),
+        prompt,
         reference1: apiReference1,
         reference2: apiReference2,
         ...(apiExtraReferences.length ? { extraReferences: apiExtraReferences } : {}),

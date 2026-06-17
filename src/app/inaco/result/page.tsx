@@ -11,6 +11,7 @@ import {
   INACO_FRAME_SIZE,
   INACO_STORAGE,
 } from "@/lib/inaco/constants";
+import { inacoPath } from "@/lib/inaco/model-version";
 
 const JPEG_QUALITY_PRINT = 1;
 
@@ -29,11 +30,11 @@ export default function InacoResultPage() {
     const storedResult = window.localStorage.getItem(INACO_STORAGE.result);
     const storedQrUrl = window.localStorage.getItem(INACO_STORAGE.qrUrl);
     if (!storedResult) {
-      router.replace("/inaco/cam");
+      router.replace(inacoPath("/inaco/cam"));
       return;
     }
     if (!storedQrUrl) {
-      router.replace("/inaco/form");
+      router.replace(inacoPath("/inaco/form"));
       return;
     }
     setResultImageUrl(storedResult);
@@ -266,11 +267,11 @@ export default function InacoResultPage() {
           role="button"
           tabIndex={0}
           aria-label="Kembali ke home"
-          onClick={() => router.push("/inaco")}
+          onClick={() => router.push(inacoPath("/inaco"))}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              router.push("/inaco");
+              router.push(inacoPath("/inaco"));
             }
           }}
         >

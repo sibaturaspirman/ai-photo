@@ -10,6 +10,7 @@ import {
   startInacoGenerate,
 } from "@/lib/inaco/generate-session";
 import { INACO_STORAGE } from "@/lib/inaco/constants";
+import { inacoPath } from "@/lib/inaco/model-version";
 
 const PORTRAIT_W = 1080;
 const PORTRAIT_H = 1920;
@@ -214,7 +215,7 @@ function InacoCamPageContent() {
     const tema = Number(window.localStorage.getItem(INACO_STORAGE.tema));
     const outfit = Number(window.localStorage.getItem(INACO_STORAGE.outfit));
     if (!tema || !outfit) {
-      router.replace("/inaco/template");
+      router.replace(inacoPath("/inaco/template"));
       return;
     }
     setSelectedTema(tema);
@@ -339,7 +340,7 @@ function InacoCamPageContent() {
 
     await new Promise((resolve) => window.setTimeout(resolve, INACO_CAM_LOADING_MS));
     setProcessingPercent(100);
-    router.push("/inaco/form");
+    router.push(inacoPath("/inaco/form"));
   };
 
   return (

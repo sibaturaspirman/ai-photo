@@ -1,10 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { inacoPath } from "@/lib/inaco/model-version";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function InacoHomePage() {
+function InacoHomeContent() {
+  const searchParams = useSearchParams();
+
   return (
     <Link
-      href="/inaco/template"
+      href={inacoPath("/inaco/template", searchParams)}
       className="inaco-landscape-shell relative isolate flex min-h-dvh w-full touch-manipulation items-center justify-center overflow-hidden p-4"
       aria-label="Tap to continue"
     >
@@ -19,5 +26,13 @@ export default function InacoHomePage() {
         sizes="100vw"
       />
     </Link>
+  );
+}
+
+export default function InacoHomePage() {
+  return (
+    <Suspense fallback={null}>
+      <InacoHomeContent />
+    </Suspense>
   );
 }

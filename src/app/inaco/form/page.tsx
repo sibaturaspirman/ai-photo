@@ -13,6 +13,7 @@ import {
   saveInacoUserData,
   waitForInacoGenerateResult,
 } from "@/lib/inaco/constants";
+import { inacoPath } from "@/lib/inaco/model-version";
 
 type ActiveField = "name" | "phone" | "username" | null;
 
@@ -50,7 +51,7 @@ export default function InacoFormPage() {
 
   useEffect(() => {
     if (!hasInacoGenerateAccess()) {
-      router.replace("/inaco/cam");
+      router.replace(inacoPath("/inaco/cam"));
     }
   }, [router]);
 
@@ -102,7 +103,7 @@ export default function InacoFormPage() {
     setPhoneTouched(true);
     if (!canSubmit || isSubmitting || phoneError) return;
     if (!hasInacoGenerateAccess()) {
-      router.replace("/inaco/cam");
+      router.replace(inacoPath("/inaco/cam"));
       return;
     }
 
@@ -145,7 +146,7 @@ export default function InacoFormPage() {
         socialUsername: socialUsername.trim(),
       });
       saveInacoSubmissionData(submission);
-      router.push("/inaco/result");
+      router.push(inacoPath("/inaco/result"));
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Gagal submit data.");
     } finally {
